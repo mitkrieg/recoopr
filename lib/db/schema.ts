@@ -5,6 +5,7 @@ import {
   text,
   timestamp,
   integer,
+  boolean,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -66,6 +67,55 @@ export const invitations = pgTable('invitations', {
     .references(() => users.id),
   invitedAt: timestamp('invited_at').notNull().defaultNow(),
   status: varchar('status', { length: 20 }).notNull().default('pending'),
+});
+
+export const theaters = pgTable('theaters', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  url: varchar('url', { length: 255 }).notNull(),
+  venueId: varchar('venue_id', { length: 50 }),
+  venueSlug: varchar('venue_slug', { length: 50 }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const theaterSections = pgTable('theater_sections', {
+  id: serial('id').primaryKey(),
+  theaterId: integer('theater_id')
+    .notNull()
+    .references(() => theaters.id),
+  name: varchar('name', { length: 50 }).notNull(),
+  categoryKey: integer('category_key'),
+  color: varchar('color', { length: 20 }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const theaterRows = pgTable('theater_rows', {
+  id: serial('id').primaryKey(),
+  sectionId: integer('section_id')
+    .notNull()
+    .references(() => theaterSections.id),
+  label: varchar('label', { length: 10 }).notNull(),
+  displayLabel: varchar('display_label', { length: 10 }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const theaterSeats = pgTable('theater_seats', {
+  id: serial('id').primaryKey(),
+  rowId: integer('row_id')
+    .notNull()
+    .references(() => theaterRows.id),
+  seatNumber: varchar('seat_number', { length: 10 }).notNull(),
+  displayNumber: varchar('display_number', { length: 10 }),
+  price: integer('price'),
+  status: varchar('status', { length: 20 }),
+  accessible: boolean('accessible').default(false),
+  restrictedView: boolean('restricted_view').default(false),
+  houseSeat: boolean('house_seat').default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
 export const teamsRelations = relations(teams, ({ many }) => ({
