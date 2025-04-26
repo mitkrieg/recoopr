@@ -6,6 +6,7 @@ import {
   timestamp,
   integer,
   boolean,
+  real,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -114,6 +115,8 @@ export const theaterSeats = pgTable('theater_seats', {
   accessible: boolean('accessible').default(false),
   restrictedView: boolean('restricted_view').default(false),
   houseSeat: boolean('house_seat').default(false),
+  x: real('x'),
+  y: real('y'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

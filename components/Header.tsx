@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { use, useState, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
-import { CircleIcon, Home, LogOut } from 'lucide-react';
+import { CircleIcon, Drama, Settings, LogOut } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,20 +49,21 @@ function UserMenu() {
     <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
       <DropdownMenuTrigger>
         <Avatar className="cursor-pointer size-9">
-          <AvatarImage alt={user.name || ''} />
           <AvatarFallback>
             {user.email
-              .split(' ')
-              .map((n) => n[0])
-              .join('')}
+              ? user.email
+                .split('@')[0]
+                .charAt(0)
+                .toUpperCase()
+              : 'U'}
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="flex flex-col gap-1">
         <DropdownMenuItem className="cursor-pointer">
-          <Link href="/dashboard" className="flex w-full items-center">
-            <Home className="mr-2 h-4 w-4" />
-            <span>Dashboard</span>
+          <Link href="/settings" className="flex w-full items-center">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Settings</span>
           </Link>
         </DropdownMenuItem>
         <form action={handleSignOut} className="w-full">
@@ -78,14 +79,24 @@ function UserMenu() {
   );
 }
 
-function Header() {
+export function Header() {
+  const { data: user } = useSWR<User>('/api/user', fetcher);
+  
   return (
     <header className="border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-        <Link href="/" className="flex items-center">
-          <CircleIcon className="h-6 w-6 text-orange-500" />
-          <span className="ml-2 text-xl font-semibold text-gray-900">ACME</span>
-        </Link>
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+        <div className="flex items-center">
+          <Link href="/" className="flex items-center">
+            <CircleIcon className="h-6 w-6 text-orange-500" />
+            <span className="ml-2 text-xl font-semibold text-gray-900">ReCoopr</span>
+          </Link>
+          {user && (
+            <Link href="/productions" className="ml-8 text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center">
+              <Drama className="mr-2 h-4 w-4" />
+              <span>Productions</span>
+            </Link>
+          )}
+        </div>
         <div className="flex items-center space-x-4">
           <Suspense fallback={<div className="h-9" />}>
             <UserMenu />
@@ -93,6 +104,15 @@ function Header() {
         </div>
       </div>
     </header>
+  );
+}
+
+export function HeaderOnly({ children }: { children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col min-h-screen">
+      <Header />
+      {children}
+    </section>
   );
 }
 

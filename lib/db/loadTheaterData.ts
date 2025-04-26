@@ -175,7 +175,9 @@ async function loadTheaterData() {
                   status: 'available',
                   accessible: seat.accessible || false,
                   restrictedView: seat.restrictedView || false,
-                  houseSeat: false
+                  houseSeat: false,
+                  x: seat.x,
+                  y: seat.y
                 });
               }
             }
