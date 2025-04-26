@@ -1,0 +1,1 @@
+ALTER TABLE "theater_seats" ADD COLUMN "section_label" varchar(50);

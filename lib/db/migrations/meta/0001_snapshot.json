@@ -1,6 +1,6 @@
 {
-  "id": "ea60460d-93a9-4d62-bf44-e6531e852ae1",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "9ec76e0f-40a6-4dfa-814c-2dcb34583b21",
+  "prevId": "ea60460d-93a9-4d62-bf44-e6531e852ae1",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -431,6 +431,19 @@
           "primaryKey": false,
           "notNull": false,
           "default": false
+        },
+        "restricted_view": {
+          "name": "restricted_view",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "section_label": {
+          "name": "section_label",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
         },
         "x": {
           "name": "x",

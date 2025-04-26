@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { parse } from 'csv-parse/sync';
 import { v5 as uuidv5 } from 'uuid';
-
+import { eq, and } from 'drizzle-orm';
 interface VenueSection {
   label: string;
   subChart?: {
@@ -109,25 +109,35 @@ async function loadTheaterData() {
       let theaterSeatCount = 0;
 
       // Process sections from both categories and subChart
-      const sectionsToProcess = new Set<{ label: string; key?: number; color?: string }>();
+      const sectionsToProcess = new Set<{ label: string; key?: number; color?: string; parentSection?: string }>();
 
-      // Add sections from categories
-      if (venueData.categories?.list) {
-        for (const category of venueData.categories.list) {
-          sectionsToProcess.add({
-            label: category.label,
-            key: category.key,
-            color: category.color,
-          });
-        }
-      }
+      // // Add sections from categories
+      // if (venueData.categories?.list) {
+      //   for (const category of venueData.categories.list) {
+      //     sectionsToProcess.add({
+      //       label: category.label.toUpperCase(),
+      //       key: category.key,
+      //       color: category.color,
+      //     });
+      //   }
+      // }
 
       // Add sections from subChart if they're not already in the set
       if (venueData.subChart?.sections) {
         for (const section of venueData.subChart.sections) {
-          if (!Array.from(sectionsToProcess).some(s => s.label === section.label)) {
+          if (!section.subChart) {
             sectionsToProcess.add({
-              label: section.label,
+              label: section.label.toUpperCase(),
+            });
+            continue;
+          }
+          // sectionsToProcess.add({
+          //   label: section.label.toUpperCase(),
+          // });
+          for (const row of section.subChart.rows) {
+            sectionsToProcess.add({
+              label: row.sectionLabel ? row.sectionLabel.toUpperCase() : section.label.toUpperCase(),
+              parentSection: row.sectionLabel ? section.label.toUpperCase() : null,
             });
           }
         }
@@ -135,51 +145,75 @@ async function loadTheaterData() {
 
       // Process all sections
       for (const sectionData of sectionsToProcess) {
+        
         // Skip sections with "CAN CAN!" in their name
         if (sectionData.label.includes('CAN CAN!')) {
           console.log(`Skipping section: ${sectionData.label}`);
           continue;
         }
 
-        const [section] = await db.insert(theaterSections).values({
-          theaterId: theater.id,
-          name: sectionData.label.toUpperCase(),
-          categoryKey: sectionData.key || null,
-          color: sectionData.color || null,
-        }).returning();
-
-        // Find matching section in subChart for rows and seats
-        const matchingSection = venueData.subChart?.sections?.find(
-          (s: VenueSection) => s.label === sectionData.label
+        // Check if section already exists
+        const existingSection = await db.select().from(theaterSections).where(
+          and(
+            eq(theaterSections.label, sectionData.label),
+            eq(theaterSections.theaterId, theater.id)
+          )
         );
 
-        if (matchingSection?.subChart?.rows) {
-          for (const row of matchingSection.subChart.rows) {
-            const [rowRecord] = await db.insert(theaterRows).values({
-              sectionId: section.id,
-              label: row.label,
-              displayLabel: row.displayLabel || null,
-            }).returning();
+        let section;
+        if (existingSection.length === 0) {
+          // Create new section if it doesn't exist
+          [section] = await db.insert(theaterSections).values({
+            theaterId: theater.id,
+            name: sectionData.label,
+            categoryKey: sectionData.key || null,
+            label: sectionData.label,
+            parentSection: sectionData.parentSection || null,
+            color: sectionData.color || null,
+          }).returning();
+        } else {
+          section = existingSection[0];
+        }
+      }
 
-            // Process seats for this row
-            if (row.seats) {
-              const rowSeatCount = row.seats.length;
-              theaterSeatCount += rowSeatCount;
-              
-              for (const seat of row.seats) {
-                await db.insert(theaterSeats).values({
-                  rowId: rowRecord.id,
-                  seatNumber: seat.label,
-                  displayNumber: `${row.label}${seat.label}`,
-                  price: null, // Price will be updated later
-                  status: 'available',
-                  accessible: seat.accessible || false,
-                  restrictedView: seat.restrictedView || false,
-                  houseSeat: false,
-                  x: seat.x,
-                  y: seat.y
-                });
-              }
+      for (const parentSection of venueData.subChart?.sections) {
+        for (const row of parentSection.subChart.rows) {
+          const sectionLabel = row.sectionLabel ? row.sectionLabel.toUpperCase() : parentSection.label.toUpperCase();
+          
+          // Find the existing section
+          const [section] = await db.select().from(theaterSections).where(
+            and(
+              eq(theaterSections.label, sectionLabel),
+              eq(theaterSections.theaterId, theater.id)
+            )
+          );
+
+          if (!section) {
+            console.error(`Section not found for label: ${sectionLabel}`);
+            continue;
+          }
+
+          const [rowRecord] = await db.insert(theaterRows).values({
+            sectionId: section.id,
+            label: row.label,
+            displayLabel: row.displayLabel || null,
+          }).returning();
+
+          if (row.seats) {
+            const rowSeatCount = row.seats.length;
+            theaterSeatCount += rowSeatCount;
+
+            for (const seat of row.seats) {
+              await db.insert(theaterSeats).values({
+                rowId: rowRecord.id,
+                seatNumber: seat.label,
+                displayNumber: `${row.label}${seat.label}`,
+                price: null,
+                status: 'available',
+                accessible: seat.accessible || false,
+                x: seat.x,
+                y: seat.y
+              });
             }
           }
         }
@@ -187,6 +221,7 @@ async function loadTheaterData() {
 
       totalSeats += theaterSeatCount;
       console.log(`Loaded ${theaterSeatCount} seats for theater: ${theaterName}`);
+      // break;
     }
 
     console.log(`\nTotal seats loaded across all theaters: ${totalSeats}`);

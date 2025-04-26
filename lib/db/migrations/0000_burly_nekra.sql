@@ -56,8 +56,6 @@ CREATE TABLE "theater_seats" (
 	"price" integer,
 	"status" varchar(20),
 	"accessible" boolean DEFAULT false,
-	"restricted_view" boolean DEFAULT false,
-	"house_seat" boolean DEFAULT false,
 	"x" real,
 	"y" real,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -68,8 +66,10 @@ CREATE TABLE "theater_sections" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"theater_id" integer NOT NULL,
 	"name" varchar(50) NOT NULL,
+	"label" varchar(50) NOT NULL,
 	"category_key" integer,
 	"color" varchar(20),
+	"parent_section" varchar(50),
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -77,7 +77,7 @@ CREATE TABLE "theater_sections" (
 CREATE TABLE "theaters" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" varchar(100) NOT NULL,
-	"url" varchar(255) NOT NULL,
+	"url" varchar(255),
 	"venue_id" varchar(50),
 	"venue_slug" varchar(50),
 	"created_at" timestamp DEFAULT now() NOT NULL,

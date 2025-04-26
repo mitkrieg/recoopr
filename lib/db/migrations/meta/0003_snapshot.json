@@ -1,6 +1,6 @@
 {
-  "id": "ea60460d-93a9-4d62-bf44-e6531e852ae1",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "1605b47f-d7c5-4798-9f88-eb233a7d20c6",
+  "prevId": "1e9c3097-0ae7-4b9f-a8d0-805d36819b47",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -431,6 +431,12 @@
           "primaryKey": false,
           "notNull": false,
           "default": false
+        },
+        "section_label": {
+          "name": "section_label",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
         },
         "x": {
           "name": "x",

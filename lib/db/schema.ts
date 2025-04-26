@@ -73,7 +73,7 @@ export const invitations = pgTable('invitations', {
 export const theaters = pgTable('theaters', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }).notNull(),
-  url: varchar('url', { length: 255 }).notNull(),
+  url: varchar('url', { length: 255 }),
   venueId: varchar('venue_id', { length: 50 }),
   venueSlug: varchar('venue_slug', { length: 50 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -86,8 +86,10 @@ export const theaterSections = pgTable('theater_sections', {
     .notNull()
     .references(() => theaters.id),
   name: varchar('name', { length: 50 }).notNull(),
+  label: varchar('label', { length: 50 }).notNull(),
   categoryKey: integer('category_key'),
   color: varchar('color', { length: 20 }),
+  parentSection: varchar('parent_section', { length: 50 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -113,8 +115,7 @@ export const theaterSeats = pgTable('theater_seats', {
   price: integer('price'),
   status: varchar('status', { length: 20 }),
   accessible: boolean('accessible').default(false),
-  restrictedView: boolean('restricted_view').default(false),
-  houseSeat: boolean('house_seat').default(false),
+  sectionLabel: varchar('section_label', { length: 50 }),
   x: real('x'),
   y: real('y'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
