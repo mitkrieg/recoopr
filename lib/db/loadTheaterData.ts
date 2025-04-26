@@ -137,7 +137,7 @@ async function loadTheaterData() {
           for (const row of section.subChart.rows) {
             sectionsToProcess.add({
               label: row.sectionLabel ? row.sectionLabel.toUpperCase() : section.label.toUpperCase(),
-              parentSection: row.sectionLabel ? section.label.toUpperCase() : null,
+              parentSection: section.label.toUpperCase(),
             });
           }
         }

@@ -41,13 +41,13 @@ const data = {
   },
   navMain: [
     {
-      title: "Dashboard",
-      url: "#",
+      title: "Productions",
+      url: "/productions",
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
-      url: "#",
+      title: "Theaters",
+      url: "/theaters",
       icon: IconListDetails,
     },
     {

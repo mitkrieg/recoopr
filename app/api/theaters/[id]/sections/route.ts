@@ -124,7 +124,8 @@ export async function POST(request: Request) {
   try {
     const [newSection] = await db.insert(theaterSections).values({
       name,
-      theaterId
+      theaterId,
+      label: name
     }).returning();
 
     return NextResponse.json(newSection, { status: 201 });

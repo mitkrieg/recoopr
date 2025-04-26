@@ -37,6 +37,9 @@ const FormSchema = z.object({
   venue: z.string().min(2, {
     message: "Venue must be at least 2 characters.",
   }),
+  capitalization: z.object({
+    capitalization: z.number().min(0).max(1000000000)
+  })
 })
 
 function InputForm() {
@@ -74,6 +77,9 @@ function InputForm() {
         to: new Date(),
       },
       venue: "",
+      capitalization: {
+        capitalization: 100,
+      },
     },
   })
 
@@ -150,6 +156,28 @@ function InputForm() {
               </FormControl>
               <FormMessage />
             </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="capitalization"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Capitalization</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <span className="absolute left-3 top-1 text-gray-500">$</span>
+                  <Input 
+                    type="number" 
+                    value={field.value.capitalization || ''}
+                    onChange={(e) => field.onChange({ capitalization: Number(e.target.value) || 0 })}
+                    className="pl-7 placeholder:text-gray-400"
+                    placeholder="100"
+                  />
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem> 
           )}
         />
         <Button type="submit">Submit</Button>

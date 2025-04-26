@@ -46,7 +46,9 @@ export async function GET(
         name: theaterSections.name,
         categoryKey: theaterSections.categoryKey,
         color: theaterSections.color,
-        theaterId: theaterSections.theaterId
+        theaterId: theaterSections.theaterId,
+        parentSection: theaterSections.parentSection,
+        label: theaterSections.label
       })
       .from(theaterSections)
       .where(eq(theaterSections.theaterId, theaterId))
