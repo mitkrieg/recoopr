@@ -23,9 +23,16 @@ export type PricePoint = {
 interface PricingPickerProps {
   pricePoints: PricePoint[];
   onChange: (pricePoints: PricePoint[]) => void;
+  selectedPricePoint: PricePoint | null;
+  onSelectPricePoint: (pricePoint: PricePoint | null) => void;
 }
 
-export function PricingPicker({ pricePoints, onChange }: PricingPickerProps) {
+export function PricingPicker({ 
+  pricePoints, 
+  onChange, 
+  selectedPricePoint,
+  onSelectPricePoint 
+}: PricingPickerProps) {
   const [newPrice, setNewPrice] = useState('');
   const [newColor, setNewColor] = useState('#000000');
   const [newAttributes, setNewAttributes] = useState({
@@ -107,9 +114,13 @@ export function PricingPicker({ pricePoints, onChange }: PricingPickerProps) {
                 className="flex items-center justify-between p-3 border rounded-lg"
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-5 h-5 rounded-full"
-                    style={{ backgroundColor: point.color }}
+                  <button
+                    className="w-5 h-5 rounded-full border-2"
+                    style={{ 
+                      backgroundColor: point.color,
+                      borderColor: selectedPricePoint?.id === point.id ? 'black' : 'transparent'
+                    }}
+                    onClick={() => onSelectPricePoint(point)}
                   />
                   <div className="space-y-1">
                     <span className="font-medium">${point.price.toFixed(2)}</span>

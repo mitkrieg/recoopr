@@ -3,8 +3,9 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { redirect, useRouter } from "next/navigation"
+import { normalizeSeatPositions } from "@/utils/seat-position-normalizer"
 
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -23,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import useSWR from 'swr';
 import { SeatMap } from "@/components/seat-map"
 import { PricingPicker, PricePoint } from "@/components/pricing-picker"
+import { SeatPlan } from "@/types/seat-plan"
 
 type Theater = {
   id: number
@@ -55,6 +57,8 @@ function InputForm() {
   const [createdProduction, setCreatedProduction] = useState<{id: number, name: string, startDate: string, endDate: string} | null>(null);
   const [selectedVenue, setSelectedVenue] = useState<number | null>(null);
   const [pricePoints, setPricePoints] = useState<PricePoint[]>([]);
+  const [selectedPricePoint, setSelectedPricePoint] = useState<PricePoint | null>(null);
+  const [seatPlan, setSeatPlan] = useState<SeatPlan | null>(null);
   const router = useRouter();
   
   useEffect(() => {
@@ -78,7 +82,29 @@ function InputForm() {
     
     fetchTheaters();
   }, []);
-  
+
+  useEffect(() => {
+    async function fetchSeatPlan() {
+      if (!selectedVenue) return;
+      
+      try {
+        const response = await fetch(`/api/theaters/${selectedVenue}/seatplan`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch seat plan');
+        }
+        const data = await response.json();
+        setSeatPlan(normalizeSeatPositions(data));
+      } catch (error) {
+        console.error('Error fetching seat plan:', error);
+        toast('Failed to load seat plan', {
+          description: 'Please try again later',
+        });
+      }
+    }
+    
+    fetchSeatPlan();
+  }, [selectedVenue]);
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -93,6 +119,51 @@ function InputForm() {
       },
     },
   })
+
+  const handleSeatClick = useCallback((sectionId: number, rowId: number, seatId: number) => {
+    if (!selectedPricePoint || !seatPlan) {
+      console.log('Missing required data:', { selectedPricePoint, seatPlan });
+      return;
+    }
+    
+    console.log('Updating seat with price point:', selectedPricePoint);
+    
+    const updatedSeatPlan = {
+      ...seatPlan,
+      sections: seatPlan.sections.map((section) => {
+        if (section.id !== sectionId) return section;
+        return {
+          ...section,
+          rows: section.rows.map((row) => {
+            if (row.id !== rowId) return row;
+            return {
+              ...row,
+              seats: row.seats.map((seat) => {
+                if (seat.id !== seatId) return seat;
+                const updatedSeat = {
+                  ...seat,
+                  price: selectedPricePoint.price,
+                  status: selectedPricePoint.attributes.houseSeat ? 'house' : 
+                         selectedPricePoint.attributes.emergency ? 'emergency' : 
+                         selectedPricePoint.attributes.premium ? 'premium' : 
+                         selectedPricePoint.attributes.accessible ? 'accessible' : 
+                         selectedPricePoint.attributes.restrictedView ? 'restricted' : 'available'
+                };
+                console.log('Updated seat:', updatedSeat);
+                return updatedSeat;
+              })
+            };
+          })
+        };
+      })
+    };
+
+    setSeatPlan(updatedSeatPlan);
+  }, [selectedPricePoint, seatPlan]);
+
+  const handlePricePointSelect = useCallback((pricePoint: PricePoint | null) => {
+    setSelectedPricePoint(pricePoint);
+  }, []);
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setIsSubmitting(true);
@@ -140,11 +211,24 @@ function InputForm() {
         </Button>
         <div className="flex gap-4 w-full">
           <div className="flex-1">
-            {selectedVenue && <SeatMap theater={theaters.find(t => t.id === selectedVenue)!} />}
+            {selectedVenue && (
+              <SeatMap 
+                theater={theaters.find(t => t.id === selectedVenue)!} 
+                pricePoints={pricePoints}
+                selectedPricePoint={selectedPricePoint}
+                onSeatClick={handleSeatClick}
+                seatPlan={seatPlan}
+              />
+            )}
           </div>
           <div className="w-60 shrink-0">
             <div className="sticky top-4">
-              <PricingPicker pricePoints={pricePoints} onChange={setPricePoints} /> 
+              <PricingPicker 
+                pricePoints={pricePoints} 
+                onChange={setPricePoints}
+                selectedPricePoint={selectedPricePoint}
+                onSelectPricePoint={handlePricePointSelect}
+              />
             </div>
           </div>
         </div>
