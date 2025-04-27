@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
             capitalization 
         }).returning();
         
-        return NextResponse.json(production);
+        return NextResponse.json(production[0]);
     } catch (error) {
         console.error('Error creating production:', error);
         return NextResponse.json({ error: 'Failed to create production' }, { status: 500 });

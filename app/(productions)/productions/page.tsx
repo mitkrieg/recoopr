@@ -1,27 +1,41 @@
-import { db } from '@/lib/db/drizzle';  
-import { productions as productionsTable } from '@/lib/db/schema';
+import { db } from '@/lib/db/drizzle';
+import { productions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { Card, CardDescription } from '@/components/ui/card';
-import { CardTitle } from '@/components/ui/card';
+import { getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 
-
 export default async function ProductionsPage() {
+  const session = await getSession();
 
-  const productions = await db.select().from(productionsTable);
+  if (!session?.user?.id) {
+    redirect('/sign-in');
+  }
+
+  const userProductions = await db
+    .select()
+    .from(productions)
+    .where(eq(productions.userId, session.user.id));
 
   return (
-    <>
-      <h1 className="text-3xl font-bold leading-tight text-gray-900">Productions</h1>
-      {/* display all productions for the current user  as a grid of cards  */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {productions?.map((production) => (
-          <Card key={production.id}>
-            <CardTitle>{production.name}</CardTitle>
-            <CardDescription>{production.startDate} - {production.endDate}</CardDescription>
-          </Card>
-        ))}
-      </div>
-    </>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Your Productions</h1>
+      {userProductions.length === 0 ? (
+        <p>You don't have any productions yet. Create one to get started!</p>
+      ) : (
+        <div className="grid gap-4">
+          {userProductions.map((production) => (
+            <div key={production.id} className="border rounded-lg p-4">
+              <h2 className="text-xl font-semibold">{production.name}</h2>
+              <p className="text-gray-500">
+                {new Date(production.startDate).toLocaleDateString()} -{' '}
+                {production.endDate
+                  ? new Date(production.endDate).toLocaleDateString()
+                  : 'Ongoing'}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

@@ -3,19 +3,23 @@ import { scenarios, productions as productionsTable } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { Card, CardDescription } from '@/components/ui/card';
 import { CardTitle } from '@/components/ui/card';
-import { getSession } from '@/lib/auth/session';
-
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { getUser } from '@/lib/db/queries';
+import Link from 'next/link';
 
 export default async function ScenariosPage() {
-  const session = await getSession();
-
-  if (!session) {
+  const user = await getUser();
+  
+  if (!user) {
     redirect('/sign-in');
   }
 
-  const userProductions = await db.select().from(productionsTable).where(eq(productionsTable.userId, session.user.id));
+  // Get user's productions
+  const userProductions = await db
+    .select()
+    .from(productionsTable)
+    .where(eq(productionsTable.userId, user.id));
+
   // If no productions, handle accordingly
   if (userProductions.length === 0) {
     return (
@@ -45,7 +49,7 @@ export default async function ScenariosPage() {
       eq(scenarios.productionId, productionsTable.id)
     )
     .where(
-      eq(productionsTable.userId, session.user.id)
+      eq(productionsTable.userId, user.id)
     );
 
   return (
@@ -62,7 +66,7 @@ export default async function ScenariosPage() {
                 <div className="p-4">
                   <CardTitle>{scenario.name}</CardTitle>
                   <CardDescription className="mt-2">
-                    Production: {production?.name || 'Unknown'}
+                    Production: {production.name}
                   </CardDescription>
                   {scenario.description && (
                     <p className="mt-2 text-sm text-gray-600">{scenario.description}</p>

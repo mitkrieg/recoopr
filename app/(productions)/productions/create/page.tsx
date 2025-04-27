@@ -20,9 +20,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { DatePickerWithRange } from "@/components/DateRangePicker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-// import { getSession } from "@/lib/auth/session"
-// import { useCurrentUser } from "@/utils/getCurrentUser"
 import useSWR from 'swr';
+import { SeatMap } from "@/components/seat-map"
+import { PricingPicker, PricePoint } from "@/components/pricing-picker"
 
 type Theater = {
   id: number
@@ -52,8 +52,10 @@ function InputForm() {
   const [theaters, setTheaters] = useState<Theater[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdProduction, setCreatedProduction] = useState<{id: number, name: string, startDate: string, endDate: string} | null>(null);
+  const [selectedVenue, setSelectedVenue] = useState<number | null>(null);
+  const [pricePoints, setPricePoints] = useState<PricePoint[]>([]);
   const router = useRouter();
-  const { data: user, error, isLoading: isUserLoading } = useSWR('/api/user', fetcher);
   
   useEffect(() => {
     async function fetchTheaters() {
@@ -92,20 +94,9 @@ function InputForm() {
     },
   })
 
-  if (!user) {
-    redirect('/sign-in');
-  }
-
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
-
-  if (isUserLoading) {
-    return <div>Loading...</div>;
-  }
-
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setIsSubmitting(true);
+    setSelectedVenue(Number(data.venue));
     try {
       const response = await fetch('/api/productions', {
         method: 'POST',
@@ -126,14 +117,39 @@ function InputForm() {
       }
 
       const result = await response.json();
+      console.log('API Response:', result);
       toast.success('Production created successfully');
-      router.push(`/productions/scenario?productionId=${result.id}`);
+      setCreatedProduction(result);
     } catch (error) {
       console.error('Error creating production:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create production');
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (createdProduction) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold">{createdProduction.name}</h1>
+        <div className="space-y-2">
+          <p>Production {new Date(createdProduction.startDate).toLocaleDateString()} - {new Date(createdProduction.endDate).toLocaleDateString()}</p>
+        </div>
+        <Button onClick={() => router.push(`/productions/scenario?productionId=${createdProduction.id}`)}>
+          Continue to Scenario
+        </Button>
+        <div className="flex gap-4 w-full">
+          <div className="flex-1">
+            {selectedVenue && <SeatMap theater={theaters.find(t => t.id === selectedVenue)!} />}
+          </div>
+          <div className="w-60 shrink-0">
+            <div className="sticky top-4">
+              <PricingPicker pricePoints={pricePoints} onChange={setPricePoints} /> 
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -232,6 +248,21 @@ function InputForm() {
 }
 
 export default function CreateProductionPage() {
+
+  const { data: user, error, isLoading: isUserLoading } = useSWR('/api/user', fetcher);
+
+  if (!user) {
+    redirect('/sign-in');
+  }
+
+  if (error) {
+    return <div>Error: {error.message}</div>;
+  }
+
+  if (isUserLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Create a New Production</h1>
