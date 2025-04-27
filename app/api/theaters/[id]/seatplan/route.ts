@@ -9,9 +9,10 @@ import { eq, asc } from 'drizzle-orm';
  */
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const theaterId = parseInt(params.id);
+  const { id } = await params;
+  const theaterId = parseInt(id);
 
   if (isNaN(theaterId)) {
     return NextResponse.json(

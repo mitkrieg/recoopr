@@ -1,15 +1,16 @@
 import { db } from '@/lib/db/drizzle';
 import { theaterSections } from '@/lib/db/schema';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { eq } from 'drizzle-orm';
 
 
 // delete a section by id
 export async function DELETE(
-    request: Request,
-    { params }: { params: { id: string } }
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
   ) {
-    const sectionId = parseInt(params.id);
+    const { id } = await params;
+    const sectionId = parseInt(id);
   
     if (isNaN(sectionId)) {
       return NextResponse.json(
@@ -29,10 +30,11 @@ export async function DELETE(
   
   // update a section by id
   export async function PATCH(
-    request: Request,
-    { params }: { params: { id: string } }
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }  
   ) {
-    const sectionId = parseInt(params.id);
+    const { id } = await params;
+    const sectionId = parseInt(id);
   
     if (isNaN(sectionId)) {
       return NextResponse.json(

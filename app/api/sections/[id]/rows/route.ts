@@ -1,14 +1,15 @@
 import { db } from '@/lib/db/drizzle';
 import { theaterRows, theaterSections } from '@/lib/db/schema';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { eq, asc } from 'drizzle-orm';
 
 // get all rows for a section by id
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const sectionId = parseInt(params.id);
+  const { id } = await params;
+  const sectionId = parseInt(id);
 
   if (isNaN(sectionId)) {
     return NextResponse.json(
@@ -29,7 +30,7 @@ export async function GET(
 
 
 // create a new row for a section by id
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const { name, sectionId } = await request.json();
 
   if (isNaN(sectionId)) {

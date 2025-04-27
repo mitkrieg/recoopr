@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Squircle } from "lucide-react";
 import { normalizeSeatPositions } from "@/utils/seat-position-normalizer";
 import { Theater, SeatPlan } from "@/types/seat-plan";
+import { PricePoint } from "@/components/pricing-picker";
 
-export function SeatMap({ theater }: { theater: Theater }) {
+export function SeatMap({ theater, pricePoints = [] }: { theater: Theater, pricePoints?: PricePoint[] }) {
     const [seatPlan, setSeatPlan] = useState<SeatPlan | null>(null);
 
     useEffect(() => {

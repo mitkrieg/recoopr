@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { useEffect, useState } from "react"
+import { redirect, useRouter } from "next/navigation"
 
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -19,6 +20,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { DatePickerWithRange } from "@/components/DateRangePicker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+// import { getSession } from "@/lib/auth/session"
+// import { useCurrentUser } from "@/utils/getCurrentUser"
+import useSWR from 'swr';
 
 type Theater = {
   id: number
@@ -42,9 +46,14 @@ const FormSchema = z.object({
   })
 })
 
+const fetcher = (url: string) => fetch(url).then(res => res.json())
+
 function InputForm() {
   const [theaters, setTheaters] = useState<Theater[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
+  const { data: user, error, isLoading: isUserLoading } = useSWR('/api/user', fetcher);
   
   useEffect(() => {
     async function fetchTheaters() {
@@ -83,14 +92,48 @@ function InputForm() {
     },
   })
 
-  function onSubmit(data: z.infer<typeof FormSchema>) {
-    toast("You submitted the following values:", {
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    })
+  if (!user) {
+    redirect('/sign-in');
+  }
+
+  if (error) {
+    return <div>Error: {error.message}</div>;
+  }
+
+  if (isUserLoading) {
+    return <div>Loading...</div>;
+  }
+
+  async function onSubmit(data: z.infer<typeof FormSchema>) {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/productions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          startDate: data.performanceDates.from.toISOString(),
+          endDate: data.performanceDates.to.toISOString(),
+          capitalization: data.capitalization.capitalization,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create production');
+      }
+
+      const result = await response.json();
+      toast.success('Production created successfully');
+      router.push(`/productions/scenario?productionId=${result.id}`);
+    } catch (error) {
+      console.error('Error creating production:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create production');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -180,7 +223,9 @@ function InputForm() {
             </FormItem> 
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Creating..." : "Submit"}
+        </Button>
       </form>
     </Form>
   )

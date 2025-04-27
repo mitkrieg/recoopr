@@ -1,14 +1,15 @@
 import { db } from '@/lib/db/drizzle';
 import { theaterRows } from '@/lib/db/schema';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { eq, asc } from 'drizzle-orm';
 
 // get a row by id
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const rowId = parseInt(params.id);
+  const { id } = await params;
+  const rowId = parseInt(id);
 
   if (isNaN(rowId)) {
     return NextResponse.json(
@@ -29,10 +30,11 @@ export async function GET(
 
 // update a row by id
 export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const rowId = parseInt(params.id);
+  const { id } = await params;
+  const rowId = parseInt(id);
 
   if (isNaN(rowId)) {
     return NextResponse.json(

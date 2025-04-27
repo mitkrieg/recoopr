@@ -7,6 +7,8 @@ import {
   integer,
   boolean,
   real,
+  date,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -84,7 +86,7 @@ export const theaterSections = pgTable('theater_sections', {
   id: serial('id').primaryKey(),
   theaterId: integer('theater_id')
     .notNull()
-    .references(() => theaters.id),
+    .references(() => theaters.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 50 }).notNull(),
   label: varchar('label', { length: 50 }).notNull(),
   categoryKey: integer('category_key'),
@@ -98,7 +100,7 @@ export const theaterRows = pgTable('theater_rows', {
   id: serial('id').primaryKey(),
   sectionId: integer('section_id')
     .notNull()
-    .references(() => theaterSections.id),
+    .references(() => theaterSections.id, { onDelete: 'cascade' }),
   label: varchar('label', { length: 10 }).notNull(),
   displayLabel: varchar('display_label', { length: 10 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -109,7 +111,7 @@ export const theaterSeats = pgTable('theater_seats', {
   id: serial('id').primaryKey(),
   rowId: integer('row_id')
     .notNull()
-    .references(() => theaterRows.id),
+    .references(() => theaterRows.id, { onDelete: 'cascade' }),
   seatNumber: varchar('seat_number', { length: 10 }).notNull(),
   displayNumber: varchar('display_number', { length: 10 }),
   price: integer('price'),
@@ -118,6 +120,56 @@ export const theaterSeats = pgTable('theater_seats', {
   sectionLabel: varchar('section_label', { length: 50 }),
   x: real('x'),
   y: real('y'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const productions = pgTable('productions', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  startDate: date('start_date').notNull(),
+  endDate: date('end_date'),
+  capitalization: integer('capitalization'),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// senarios
+export const scenarios = pgTable('scenarios', {
+  id: serial('id').primaryKey(),
+  productionId: integer('production_id')
+    .notNull()
+    .references(() => productions.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  theaterId: integer('theater_id')
+    .notNull()
+    .references(() => theaters.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// secenario_seatmaps
+export const scenarioSeatmaps = pgTable('scenario_seatmaps', {
+  id: serial('id').primaryKey(),
+  scenarioId: integer('scenario_id')
+    .notNull()
+    .references(() => scenarios.id, { onDelete: 'cascade' }),
+  seatmap: jsonb('seatmap'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// secenario_seatmap_pricing
+export const scenarioSeatmapPricing = pgTable('scenario_seatmap_pricing', {
+  id: serial('id').primaryKey(),
+  scenarioSeatmapId: integer('scenario_seatmap_id')
+    .notNull()
+    .references(() => scenarioSeatmaps.id, { onDelete: 'cascade' }),
+  pricing: jsonb('pricing'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

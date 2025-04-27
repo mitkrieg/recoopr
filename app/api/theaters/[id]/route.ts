@@ -1,14 +1,15 @@
 import { db } from '@/lib/db/drizzle';
 import { theaters } from '@/lib/db/schema';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { eq } from 'drizzle-orm';
 
 // get a theater by id
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const theaterId = parseInt(params.id);
+  const { id } = await params;
+  const theaterId = parseInt(id);
 
   if (isNaN(theaterId)) {
     return NextResponse.json(
@@ -32,10 +33,11 @@ export async function GET(
 
 // update a theater by id
 export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const theaterId = parseInt(params.id);
+  const { id } = await params;
+  const theaterId = parseInt(id);
 
   if (isNaN(theaterId)) {
     return NextResponse.json(
@@ -61,10 +63,11 @@ export async function PATCH(
 
 // delete a theater by id
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const theaterId = parseInt(params.id);
+  const { id } = await params;
+  const theaterId = parseInt(id);
 
   if (isNaN(theaterId)) {
     return NextResponse.json(

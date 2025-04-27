@@ -1,14 +1,15 @@
 import { db } from '@/lib/db/drizzle';
 import { theaterSections, theaters, theaterRows, theaterSeats } from '@/lib/db/schema';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { eq, asc } from 'drizzle-orm';
 
 // get all sections for a theater
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const theaterId = parseInt(params.id);
+  const { id } = await params;
+  const theaterId = parseInt(id);
   const { searchParams } = new URL(request.url);
   const includeRows = searchParams.get('includeRows') === 'true';
   const includeSeats = searchParams.get('includeSeats') === 'true';
@@ -98,8 +99,13 @@ export async function GET(
 }
 
 // create a new section for a theater
-export async function POST(request: Request) {
-  const { name, theaterId } = await request.json();
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const theaterId = parseInt(id);
+  const { name } = await request.json();
 
   if (isNaN(theaterId)) {
     return NextResponse.json(

@@ -1,14 +1,15 @@
 import { db } from '@/lib/db/drizzle';
 import { theaterRows, theaterSeats } from '@/lib/db/schema';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { eq, asc } from 'drizzle-orm';
 
 // get all seats for a row by id
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const rowId = parseInt(params.id);
+  const { id } = await params;
+  const rowId = parseInt(id);
 
   if (isNaN(rowId)) {
     return NextResponse.json(
@@ -27,7 +28,7 @@ export async function GET(
 }
 
 // create a new seat for a row by id
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const { rowId, seatNumber } = await request.json();
 
   if (isNaN(rowId)) {
