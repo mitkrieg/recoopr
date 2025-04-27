@@ -47,7 +47,7 @@ const data = {
     },
     {
       title: "Theaters",
-      url: "/theaters",
+      url: "/productions/theaters",
       icon: IconListDetails,
     },
     {

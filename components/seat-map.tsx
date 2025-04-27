@@ -41,7 +41,7 @@ export function SeatMap({ theater }: { theater: Theater }) {
                 .map(([parentName, sections]) => (
                     <div key={parentName} className="border rounded-lg p-4 parent-section flex flex-col items-start">
                         <h3 className="text-lg font-semibold mb-4 parent-section-name">{parentName}</h3>
-                        <div className="flex flex-wrap gap-2 section-grid justify-start items-start w-full">
+                        <div className="flex flex-wrap gap-2 section-grid justify-start items-start w-full overflow-auto">
                             {sections.map(section => {
                                 const sectionMaxX = Math.max(...section.rows.flatMap(row => 
                                     row.seats.map(seat => seat.x)
