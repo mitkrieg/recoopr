@@ -19,6 +19,7 @@ export function SeatMap({
 }) {
     const [seatPlan, setSeatPlan] = useState<SeatPlan | null>(initialSeatPlan);
     const [isDragging, setIsDragging] = useState(false);
+    const [lastSeat, setLastSeat] = useState<{sectionId: number, rowId: number, seatId: number} | null>(null);
 
     useEffect(() => {
         if (!initialSeatPlan) {
@@ -30,20 +31,55 @@ export function SeatMap({
         }
     }, [theater, initialSeatPlan]);
 
-    const handleMouseDown = () => {
-        if (selectedPricePoint) {
-            setIsDragging(true);
-        }
+    const handleMouseDown = (sectionId: number, rowId: number, seatId: number) => {
+        if (!selectedPricePoint) return;
+        setIsDragging(true);
+        setLastSeat({ sectionId, rowId, seatId });
+        onSeatClick(sectionId, rowId, seatId);
     };
 
     const handleMouseUp = () => {
         setIsDragging(false);
+        setLastSeat(null);
     };
 
     const handleMouseEnter = (sectionId: number, rowId: number, seatId: number) => {
-        if (isDragging && selectedPricePoint) {
-            onSeatClick(sectionId, rowId, seatId);
-        }
+        if (!isDragging || !selectedPricePoint || !lastSeat) return;
+        
+        // Get all seats between lastSeat and current seat
+        const currentSection = seatPlan?.sections.find(s => s.id === sectionId);
+        const lastSection = seatPlan?.sections.find(s => s.id === lastSeat.sectionId);
+        
+        if (!currentSection || !lastSection) return;
+        
+        const currentRow = currentSection.rows.find(r => r.id === rowId);
+        const lastRow = lastSection.rows.find(r => r.id === lastSeat.rowId);
+        
+        if (!currentRow || !lastRow) return;
+        
+        const currentSeat = currentRow.seats.find(s => s.id === seatId);
+        const lastSeatObj = lastRow.seats.find(s => s.id === lastSeat.seatId);
+        
+        if (!currentSeat || !lastSeatObj) return;
+        
+        // Calculate the range of seats to update
+        const startX = Math.min(currentSeat.x, lastSeatObj.x);
+        const endX = Math.max(currentSeat.x, lastSeatObj.x);
+        const startY = Math.min(currentSeat.y, lastSeatObj.y);
+        const endY = Math.max(currentSeat.y, lastSeatObj.y);
+        
+        // Update all seats in the range
+        seatPlan?.sections.forEach(section => {
+            section.rows.forEach(row => {
+                row.seats.forEach(seat => {
+                    if (seat.x >= startX && seat.x <= endX && seat.y >= startY && seat.y <= endY) {
+                        onSeatClick(section.id, row.id, seat.id);
+                    }
+                });
+            });
+        });
+        
+        setLastSeat({ sectionId, rowId, seatId });
     };
 
     if (!seatPlan) return <div>Loading seat plan...</div>;
@@ -94,7 +130,6 @@ export function SeatMap({
                                             <div key={row.id} className="seat-row">
                                                 {row.seats.map(seat => {
                                                     const pricePoint = pricePoints.find(p => p.price === seat.price);
-                                                    console.log('Rendering seat:', { seat, pricePoint });
                                                     return (
                                                         <div
                                                             key={seat.id}
@@ -105,7 +140,7 @@ export function SeatMap({
                                                                 transform: 'translate(-50%, -50%)'
                                                             }}
                                                             onClick={() => onSeatClick(section.id, row.id, seat.id)}
-                                                            onMouseDown={handleMouseDown}
+                                                            onMouseDown={() => handleMouseDown(section.id, row.id, seat.id)}
                                                             onMouseEnter={() => handleMouseEnter(section.id, row.id, seat.id)}
                                                         >
                                                             <Squircle 
