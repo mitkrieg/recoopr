@@ -192,7 +192,7 @@ export function SeatMap({
                                                                                     <span className="text-xs bg-blue-100 text-blue-800 px-1 py-0.5 rounded">Accessible</span>
                                                                                 )}
                                                                                 {pricePoint.attributes.restrictedView && (
-                                                                                    <span className="text-xs bg-gray-100 text-gray-800 px-1 py-0.5 rounded">Restricted</span>
+                                                                                    <span className="text-xs bg-gray-100 text-gray-800 px-1 py-0.5 rounded">Restricted View</span>
                                                                                 )}
                                                                             </div>
                                                                         </div>

@@ -459,6 +459,7 @@ function InputForm() {
                 seatPlan={seatPlan}
                 onPricePointsChange={setPricePoints}
                 onPricePointSelect={handlePricePointSelect}
+                onSeatPlanUpdate={setSeatPlan}
               />
             )}
           </div>

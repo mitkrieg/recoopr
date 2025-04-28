@@ -17,6 +17,7 @@ interface SeatMapEditorProps {
   seatPlan: SeatPlan | null
   onPricePointsChange: (pricePoints: PricePoint[]) => void
   onPricePointSelect: (pricePoint: PricePoint | null) => void
+  onSeatPlanUpdate?: (updatedSeatPlan: SeatPlan) => void
 }
 
 export function SeatMapEditor({
@@ -26,7 +27,8 @@ export function SeatMapEditor({
   onSeatClick,
   seatPlan,
   onPricePointsChange,
-  onPricePointSelect
+  onPricePointSelect,
+  onSeatPlanUpdate
 }: SeatMapEditorProps) {
   return (
     <div className="flex gap-4 w-full">
@@ -46,6 +48,8 @@ export function SeatMapEditor({
             onChange={onPricePointsChange}
             selectedPricePoint={selectedPricePoint}
             onSelectPricePoint={onPricePointSelect}
+            onSeatPlanUpdate={onSeatPlanUpdate}
+            seatPlan={seatPlan}
           />
         </div>
       </div>

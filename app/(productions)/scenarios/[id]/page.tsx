@@ -210,7 +210,10 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{name}</h1>
+        <div>
+          <h1 className="text-2xl font-bold">{name}</h1>
+          {/* <p className="text-gray-500">For {production.name}</p> */}
+        </div>
         <div className="actionButtons flex gap-2">
           <Button variant="outline" onClick={() => router.push(`/productions/${scenario.productionId}`)}>
             Back
@@ -281,6 +284,7 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
               seatPlan={seatPlan}
               onPricePointsChange={setPricePoints}
               onPricePointSelect={setSelectedPricePoint}
+              onSeatPlanUpdate={setSeatPlan}
             />
           )}
         </div>

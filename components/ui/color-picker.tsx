@@ -11,7 +11,12 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
       type="color"
       value={color}
       onChange={(e) => onChange(e.target.value)}
-      className="w-6 h-6 rounded cursor-pointer"
+      className="w-7 h-7 rounded-full border-2 border-white shadow cursor-pointer"
+      style={{
+        backgroundColor: color,
+        // outline: color === color ? "2px solid black" : "none",
+
+      }}
     />
   );
 } 

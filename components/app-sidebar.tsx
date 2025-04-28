@@ -19,6 +19,7 @@ import {
   IconUsers,
   IconFileSpreadsheet,
   IconMasksTheater,
+  IconTicket,
 } from "@tabler/icons-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -164,9 +165,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <Link href="/" className="flex items-center">
-                <CircleIcon className="h-6 w-6 text-orange-500" />
-                <span className="ml-2 text-xl font-semibold text-gray-900">ReCoopr</span>
+              <Link href="/" className="flex items-center w-full">
+                <IconTicket className="h-10 w-10 text-orange-500"/>
+                <span className=" text-xl font-semibold text-gray-900">ReCoopr</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

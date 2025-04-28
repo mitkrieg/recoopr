@@ -23,6 +23,7 @@ type Production = {
   name: string
   startDate: string
   endDate: string
+  capitalization: string
 }
 
 const formatDate = (dateString: string) => {
@@ -110,6 +111,9 @@ export default function ProductionPage({ params }: { params: Promise<{ id: strin
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">{production.name}</h1>
+          <p className="text-gray-500">
+            {production.capitalization}
+          </p>
           <p className="text-gray-500">
             {formatDate(production.startDate)} - {formatDate(production.endDate)}
           </p>

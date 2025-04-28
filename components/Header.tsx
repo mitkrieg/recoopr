@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
-import { CircleIcon, Drama, Settings, LogOut } from 'lucide-react';
+import { CircleIcon, Drama, Settings, LogOut, UserCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +15,7 @@ import { signOut } from '@/app/(login)/actions';
 import { useRouter } from 'next/navigation';
 import { User } from '@/lib/db/schema';
 import useSWR from 'swr';
+import { IconUserCircle, IconMasksTheater } from '@tabler/icons-react';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -50,12 +51,7 @@ function UserMenu() {
       <DropdownMenuTrigger>
         <Avatar className="cursor-pointer size-9">
           <AvatarFallback>
-            {user.email
-              ? user.email
-                .split('@')[0]
-                .charAt(0)
-                .toUpperCase()
-              : 'U'}
+              <IconUserCircle />
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
@@ -86,13 +82,13 @@ export function Header() {
     <header className="border-b border-gray-200">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <div className="flex items-center">
-          <Link href="/" className="flex items-center">
+          {/* <Link href="/" className="flex items-center">
             <CircleIcon className="h-6 w-6 text-orange-500" />
             <span className="ml-2 text-xl font-semibold text-gray-900">ReCoopr</span>
-          </Link>
+          </Link> */}
           {user && (
-            <Link href="/productions" className="ml-8 text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center">
-              <Drama className="mr-2 h-4 w-4" />
+            <Link href="/productions" className="text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center">
+              <IconMasksTheater className="mr-2 h-4 w-4" />
               <span>Productions</span>
             </Link>
           )}

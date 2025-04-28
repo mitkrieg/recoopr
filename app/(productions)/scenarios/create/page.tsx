@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,7 +24,7 @@ type Production = {
   name: string
 }
 
-export default function CreateScenarioPage() {
+function CreateScenarioContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const productionId = searchParams.get('productionId');
@@ -183,6 +183,14 @@ export default function CreateScenarioPage() {
           <h1 className="text-2xl font-bold">Create New Scenario</h1>
           <p className="text-gray-500">For {production.name}</p>
         </div>
+        <div className="flex justify-end">
+        <Button 
+          onClick={handleSaveScenario} 
+          disabled={isSaving || !scenarioName.trim()}
+        >
+          {isSaving ? 'Saving...' : 'Create Scenario'}
+        </Button>
+      </div>
       </div>
 
       <div className="space-y-4 p-4 border rounded-lg">
@@ -238,19 +246,21 @@ export default function CreateScenarioPage() {
               seatPlan={seatPlan}
               onPricePointsChange={setPricePoints}
               onPricePointSelect={setSelectedPricePoint}
+              onSeatPlanUpdate={setSeatPlan}
             />
           )}
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <Button 
-          onClick={handleSaveScenario} 
-          disabled={isSaving || !scenarioName.trim()}
-        >
-          {isSaving ? 'Saving...' : 'Save Scenario'}
-        </Button>
-      </div>
+      
     </div>
+  );
+}
+
+export default function CreateScenarioPage() {
+  return (
+    <Suspense>
+      <CreateScenarioContent />
+    </Suspense>
   );
 } 

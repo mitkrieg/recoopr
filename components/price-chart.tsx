@@ -36,6 +36,16 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+const formatCurrency = (value: number) => {
+    if (value >= 1000000) {
+        return `$${(value / 1000000).toFixed(1)}M`;
+    }
+    if (value >= 1000) {
+        return `$${(value / 1000).toFixed(1)}K`;
+    }
+    return `$${value}`;
+};
+
 export function getSeatCountsByPrice(seatPlan: SeatPlan | null) {
     if (!seatPlan) return [];
     
@@ -94,6 +104,8 @@ export function PriceChart({ data, pricePoints }: PriceChartProps) {
         };
     }) as ChartDataItem[];
 
+    const totalValue = chartData.reduce((acc, curr) => acc + curr.totalValue, 0);
+
     const formatCurrency = (value: number) => {
         if (value >= 1000000) {
             return `$${(value / 1000000).toFixed(1)}M`;
@@ -108,7 +120,7 @@ export function PriceChart({ data, pricePoints }: PriceChartProps) {
     <Card>
       <CardHeader>
         <CardTitle>Price Distribution</CardTitle>
-        <CardDescription>Total Value of Seats</CardDescription>
+        <CardDescription>Total Value of Seats: {formatCurrency(Number(totalValue))}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig}>

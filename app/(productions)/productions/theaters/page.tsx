@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SeatMap } from "@/components/seat-map";
+import { SeatMapEditor } from "@/components/seat-map-editor";
 import { PricingPicker, PricePoint } from "@/components/pricing-picker";
 import { SeatPlan } from "@/types/seat-plan";
 
@@ -66,23 +66,16 @@ export default function ProductionsPage() {
             </div>
             <div className="flex gap-4 mt-4">
                 <div className="flex-1">
-                    <SeatMap 
+                    <SeatMapEditor 
                         theater={selectedTheater} 
                         pricePoints={pricePoints}
                         selectedPricePoint={selectedPricePoint}
                         onSeatClick={handleSeatClick}
                         seatPlan={seatPlan}
+                        onPricePointsChange={setPricePoints}
+                        onPricePointSelect={setSelectedPricePoint}
+                        onSeatPlanUpdate={setSeatPlan}
                     />
-                </div>
-                <div className="w-60 shrink-0">
-                    <div className="sticky top-4">
-                        <PricingPicker 
-                            pricePoints={pricePoints} 
-                            onChange={setPricePoints}
-                            selectedPricePoint={selectedPricePoint}
-                            onSelectPricePoint={setSelectedPricePoint}
-                        />
-                    </div>
                 </div>
             </div>
         </div>

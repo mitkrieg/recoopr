@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { Pipette } from "lucide-react";
 
 interface SeatAttributesPickerProps {
   color: string;
@@ -29,6 +30,18 @@ interface SeatAttributesPickerProps {
     restrictedView: boolean;
   }) => void;
 }
+
+const DEFAULT_COLORS = [
+  "#22c55e", // green
+  "#3b82f6", // blue
+  "#f59e42", // orange
+  "#f43f5e", // red
+  "#a855f7", // purple
+  "#fcf003", // yellow
+  "#64748b", // slate
+  "#000000", // black
+  "#0000FF", // darkblue
+];
 
 export function SeatAttributesPicker({
   color,
@@ -58,7 +71,25 @@ export function SeatAttributesPicker({
       <DropdownMenuContent className="w-56 p-4 space-y-4">
         <div className="space-y-2">
           <Label>Color</Label>
-          <ColorPicker color={color} onChange={onColorChange} />
+          <div className="flex flex-wrap gap-2">
+            {DEFAULT_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                className="w-7 h-7 rounded-full border-2 border-white shadow"
+                style={{
+                  backgroundColor: c,
+                  outline: color === c ? "2px solid black" : "none",
+                }}
+                aria-label={`Select color ${c}`}
+                onClick={() => onColorChange(c)}
+              />
+            ))}
+            <div className="relative">
+              <ColorPicker color={color} onChange={onColorChange} />
+              <Pipette color="white" className="absolute top-1 right-1 w-4 h-4 pointer-events-none" />
+            </div>
+          </div>
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SeatAttributesPicker } from '@/components/ui/seat-attributes-picker';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { SeatPlan, Section, Row, Seat } from '@/types/seat-plan';
 
 export type PricePoint = {
   id: string;
@@ -27,16 +27,20 @@ interface PricingPickerProps {
   onChange: (pricePoints: PricePoint[]) => void;
   selectedPricePoint: PricePoint | null;
   onSelectPricePoint: (pricePoint: PricePoint | null) => void;
+  onSeatPlanUpdate?: (updatedSeatPlan: SeatPlan) => void;
+  seatPlan: SeatPlan | null;
 }
 
 export function PricingPicker({ 
   pricePoints, 
   onChange, 
   selectedPricePoint,
-  onSelectPricePoint 
+  onSelectPricePoint,
+  onSeatPlanUpdate,
+  seatPlan
 }: PricingPickerProps) {
   const [newPrice, setNewPrice] = useState('');
-  const [newColor, setNewColor] = useState('#0000FF');
+  const [newColor, setNewColor] = useState('#3b83f6');
   const [newAttributes, setNewAttributes] = useState({
     houseSeat: false,
     emergency: false,
@@ -46,7 +50,7 @@ export function PricingPicker({
   });
   const [editingPoint, setEditingPoint] = useState<PricePoint | null>(null);
   const [editPrice, setEditPrice] = useState('');
-  const [editColor, setEditColor] = useState('#0000FF');
+  const [editColor, setEditColor] = useState('#3b83f6');
   const [editAttributes, setEditAttributes] = useState({
     houseSeat: false,
     emergency: false,
@@ -67,7 +71,7 @@ export function PricingPicker({
 
     onChange([...pricePoints, newPricePoint]);
     setNewPrice('');
-    setNewColor('#0000FF');
+    setNewColor('#3b83f6');
     setNewAttributes({
       houseSeat: false,
       emergency: false,
@@ -99,7 +103,29 @@ export function PricingPicker({
   };
 
   const handleRemovePricePoint = (id: string) => {
+    const pricePointToRemove = pricePoints.find(point => point.id === id);
+    if (!pricePointToRemove || !seatPlan) {
+      onChange(pricePoints.filter(point => point.id !== id));
+      return;
+    }
+
+    // Update seat plan to set price to null for all seats with the removed price
+    const updatedSeatPlan = {
+      ...seatPlan,
+      sections: seatPlan.sections.map((section: Section) => ({
+        ...section,
+        rows: section.rows.map((row: Row) => ({
+          ...row,
+          seats: row.seats.map((seat: Seat) => ({
+            ...seat,
+            price: seat.price === pricePointToRemove.price ? null : seat.price
+          }))
+        }))
+      }))
+    };
+
     onChange(pricePoints.filter(point => point.id !== id));
+    onSeatPlanUpdate?.(updatedSeatPlan);
   };
 
   return (
@@ -210,7 +236,7 @@ export function PricingPicker({
                     <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded whitespace-nowrap">Accessible</span>
                   )}
                   {point.attributes.restrictedView && (
-                    <span className="text-[10px] bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded whitespace-nowrap">Restricted</span>
+                    <span className="text-[10px] bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded whitespace-nowrap">Restricted View</span>
                   )}
                 </div>
               </div>
