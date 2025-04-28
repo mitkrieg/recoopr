@@ -1,10 +1,12 @@
-import { db } from './drizzle';
 import { theaters, theaterSections, theaterRows, theaterSeats } from './schema';
 import fs from 'fs';
 import path from 'path';
 import { parse } from 'csv-parse/sync';
 import { v5 as uuidv5 } from 'uuid';
 import { eq, and } from 'drizzle-orm';
+import { NeonDatabase } from 'drizzle-orm/neon-serverless';
+import * as schema from './schema';
+
 interface VenueSection {
   label: string;
   subChart?: {
@@ -61,7 +63,7 @@ function cleanTheaterName(name: string): string {
   return cleaned;
 }
 
-async function loadTheaterData() {
+async function loadTheaterData(db: NeonDatabase<typeof schema>) {
   try {
     // First, clear existing data
     console.log('Clearing existing data...');
@@ -232,10 +234,4 @@ async function loadTheaterData() {
   }
 }
 
-// Run the loader
-loadTheaterData()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error('Failed to load theater data:', error);
-    process.exit(1);
-  }); 
+export { loadTheaterData };

@@ -6,10 +6,14 @@
     "start": "next start",
     "db:setup": "npx tsx lib/db/setup.ts",
     "db:seed": "npx tsx lib/db/seed.ts",
+    "db:seed-production": "NODE_ENV=production npx tsx lib/db/seed.ts",
     "db:seed-theater": "npx tsx lib/db/loadTheaterData.ts",
+    "db:seed-theater-production": "NODE_ENV=production npx tsx lib/db/loadTheaterData.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:migrate-production": "NODE_ENV=production drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "seed:production": "NODE_ENV=production npx tsx lib/db/seed_production.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -17,6 +21,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.0.1",
+    "@neondatabase/serverless": "^1.0.0",
     "@radix-ui/react-avatar": "^1.1.6",
     "@radix-ui/react-checkbox": "^1.2.3",
     "@radix-ui/react-dialog": "^1.1.11",
@@ -40,6 +45,7 @@
     "@types/react": "19.1.2",
     "@types/react-dom": "19.1.2",
     "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.18.1",
     "autoprefixer": "^10.4.21",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
@@ -74,6 +80,7 @@
     "typescript": "^5.8.3",
     "uuid": "^11.1.0",
     "vaul": "^1.1.2",
+    "ws": "^8.18.1",
     "zod": "^3.24.3"
   },
   "pnpm": {
