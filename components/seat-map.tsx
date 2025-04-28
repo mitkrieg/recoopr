@@ -20,6 +20,8 @@ export function SeatMap({
     const [seatPlan, setSeatPlan] = useState<SeatPlan | null>(initialSeatPlan);
     const [isDragging, setIsDragging] = useState(false);
     const [lastSeat, setLastSeat] = useState<{sectionId: number, rowId: number, seatId: number} | null>(null);
+    const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+    const [hoveredSeat, setHoveredSeat] = useState<{sectionId: number, rowId: number, seatId: number} | null>(null);
 
     useEffect(() => {
         if (!initialSeatPlan) {
@@ -44,49 +46,68 @@ export function SeatMap({
     };
 
     const handleMouseEnter = (sectionId: number, rowId: number, seatId: number) => {
-        if (!isDragging || !selectedPricePoint || !lastSeat) return;
-        
-        // Get all seats between lastSeat and current seat
-        const currentSection = seatPlan?.sections.find(s => s.id === sectionId);
-        const lastSection = seatPlan?.sections.find(s => s.id === lastSeat.sectionId);
-        
-        if (!currentSection || !lastSection) return;
-        
-        const currentRow = currentSection.rows.find(r => r.id === rowId);
-        const lastRow = lastSection.rows.find(r => r.id === lastSeat.rowId);
-        
-        if (!currentRow || !lastRow) return;
-        
-        const currentSeat = currentRow.seats.find(s => s.id === seatId);
-        const lastSeatObj = lastRow.seats.find(s => s.id === lastSeat.seatId);
-        
-        if (!currentSeat || !lastSeatObj) return;
-        
-        // Calculate the range of seats to update
-        const startX = Math.min(currentSeat.x, lastSeatObj.x);
-        const endX = Math.max(currentSeat.x, lastSeatObj.x);
-        const startY = Math.min(currentSeat.y, lastSeatObj.y);
-        const endY = Math.max(currentSeat.y, lastSeatObj.y);
-        
-        // Update all seats in the range
-        seatPlan?.sections.forEach(section => {
-            section.rows.forEach(row => {
-                row.seats.forEach(seat => {
-                    if (seat.x >= startX && seat.x <= endX && seat.y >= startY && seat.y <= endY) {
-                        onSeatClick(section.id, row.id, seat.id);
-                    }
+        if (isDragging && selectedPricePoint && lastSeat) {
+            // Get all seats between lastSeat and current seat
+            const currentSection = seatPlan?.sections.find(s => s.id === sectionId);
+            const lastSection = seatPlan?.sections.find(s => s.id === lastSeat.sectionId);
+            
+            if (!currentSection || !lastSection) return;
+            
+            const currentRow = currentSection.rows.find(r => r.id === rowId);
+            const lastRow = lastSection.rows.find(r => r.id === lastSeat.rowId);
+            
+            if (!currentRow || !lastRow) return;
+            
+            const currentSeat = currentRow.seats.find(s => s.id === seatId);
+            const lastSeatObj = lastRow.seats.find(s => s.id === lastSeat.seatId);
+            
+            if (!currentSeat || !lastSeatObj) return;
+            
+            // Calculate the range of seats to update
+            const startX = Math.min(currentSeat.x, lastSeatObj.x);
+            const endX = Math.max(currentSeat.x, lastSeatObj.x);
+            const startY = Math.min(currentSeat.y, lastSeatObj.y);
+            const endY = Math.max(currentSeat.y, lastSeatObj.y);
+            
+            // Update all seats in the range
+            seatPlan?.sections.forEach(section => {
+                section.rows.forEach(row => {
+                    row.seats.forEach(seat => {
+                        if (seat.x >= startX && seat.x <= endX && seat.y >= startY && seat.y <= endY) {
+                            onSeatClick(section.id, row.id, seat.id);
+                        }
+                    });
                 });
             });
-        });
+            
+            setLastSeat({ sectionId, rowId, seatId });
+        }
         
-        setLastSeat({ sectionId, rowId, seatId });
+        // Clear any existing timeout
+        if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+        }
+        
+        // Set a new timeout to show the popover after 500ms
+        const timeout = setTimeout(() => {
+            setHoveredSeat({ sectionId, rowId, seatId });
+        }, 1000);
+        
+        setHoverTimeout(timeout);
+    };
+
+    const handleMouseLeave = () => {
+        if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+        }
+        setHoveredSeat(null);
     };
 
     if (!seatPlan) return <div>Loading seat plan...</div>;
 
     return (
         <div 
-            className="mt-8 seat-map-container" 
+            className="seat-map-container" 
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
         >
@@ -114,12 +135,12 @@ export function SeatMap({
                 })
                 .map(([parentName, sections]) => (
                     <div key={parentName} className="border rounded-lg p-4 parent-section flex flex-col items-start">
-                        <h3 className="text-lg font-semibold mb-4 parent-section-name">{parentName}</h3>
+                        <h3 className="text-lg font-semibold parent-section-name">{parentName}</h3>
                         <div className="flex flex-wrap gap-2 section-grid justify-start items-start w-full overflow-auto">
                             {sections.map(section => {
-                                const sectionMaxX = Math.max(...section.rows.flatMap(row => 
-                                    row.seats.map(seat => seat.x)
-                                )) + 10;
+                                // const sectionMaxX = Math.max(...section.rows.flatMap(row => 
+                                //     row.seats.map(seat => seat.x)
+                                // )) + 10;
                                 const sectionMaxY = Math.max(...section.rows.flatMap(row => 
                                     row.seats.map(seat => seat.y)
                                 )) + 10;
@@ -142,6 +163,7 @@ export function SeatMap({
                                                             onClick={() => onSeatClick(section.id, row.id, seat.id)}
                                                             onMouseDown={() => handleMouseDown(section.id, row.id, seat.id)}
                                                             onMouseEnter={() => handleMouseEnter(section.id, row.id, seat.id)}
+                                                            onMouseLeave={handleMouseLeave}
                                                         >
                                                             <Squircle 
                                                                 className="size-4 seat-icon" 
@@ -150,30 +172,32 @@ export function SeatMap({
                                                                     fill: pricePoint?.color || 'none'
                                                                 }} 
                                                             />
-                                                            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap seat-label pointer-events-none">
-                                                                {seat.displayNumber}
-                                                                {pricePoint && (
-                                                                    <div className="mt-1">
-                                                                        <span className="font-medium">${pricePoint.price.toFixed(2)}</span>
-                                                                        <div className="flex gap-1 mt-1">
-                                                                            {pricePoint.attributes.houseSeat && (
-                                                                                <span className="text-xs bg-yellow-100 text-yellow-800 px-1 py-0.5 rounded">House</span>
-                                                                            )}
-                                                                            {pricePoint.attributes.emergency && (
-                                                                                <span className="text-xs bg-red-100 text-red-800 px-1 py-0.5 rounded">Emergency</span>
-                                                                            )}
-                                                                            {pricePoint.attributes.premium && (
-                                                                                <span className="text-xs bg-purple-100 text-purple-800 px-1 py-0.5 rounded">Premium</span>
-                                                                            )}
-                                                                            {pricePoint.attributes.accessible && (
-                                                                                <span className="text-xs bg-blue-100 text-blue-800 px-1 py-0.5 rounded">Accessible</span>
-                                                                            )}
-                                                                            {pricePoint.attributes.restrictedView && (
-                                                                                <span className="text-xs bg-gray-100 text-gray-800 px-1 py-0.5 rounded">Restricted</span>
-                                                                            )}
+                                                            <div className={`absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white px-2 py-1 rounded text-sm transition-opacity whitespace-nowrap seat-label pointer-events-none ${hoveredSeat?.sectionId === section.id && hoveredSeat?.rowId === row.id && hoveredSeat?.seatId === seat.id ? 'opacity-100' : 'opacity-0'}`}>
+                                                                <div className="flex flex-row gap-1 items-center">
+                                                                    <span className="font-bold">{seat.displayNumber}</span>
+                                                                    {pricePoint && (
+                                                                        <div className="flex flex-row gap-1 mt-1 mb-1 text-center">
+                                                                            <span className="font-medium">${pricePoint.price.toFixed(2)}</span>
+                                                                            <div className="flex flex-row gap-1 justify-center">
+                                                                                {pricePoint.attributes.houseSeat && (
+                                                                                    <span className="text-xs bg-yellow-100 text-yellow-800 px-1 py-0.5 rounded">House</span>
+                                                                                )}
+                                                                                {pricePoint.attributes.emergency && (
+                                                                                    <span className="text-xs bg-red-100 text-red-800 px-1 py-0.5 rounded">Emergency</span>
+                                                                                )}
+                                                                                {pricePoint.attributes.premium && (
+                                                                                    <span className="text-xs bg-purple-100 text-purple-800 px-1 py-0.5 rounded">Premium</span>
+                                                                                )}
+                                                                                {pricePoint.attributes.accessible && (
+                                                                                    <span className="text-xs bg-blue-100 text-blue-800 px-1 py-0.5 rounded">Accessible</span>
+                                                                                )}
+                                                                                {pricePoint.attributes.restrictedView && (
+                                                                                    <span className="text-xs bg-gray-100 text-gray-800 px-1 py-0.5 rounded">Restricted</span>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
-                                                                    </div>
-                                                                )}
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     );

@@ -11,8 +11,9 @@ export function normalizeSeatPositions(seatPlan: SeatPlan): SeatPlan {
         return acc;
     }, {} as Record<string, Section[]>);
     
-    // Find the minimum x for each parent section group
+    // Find the minimum x and y for each parent section group
     const parentMinX: Record<string, number> = {};
+    const parentMinY: Record<string, number> = {};
     
     for (const [parentKey, sections] of Object.entries(sectionsByParent)) {
         parentMinX[parentKey] = Math.min(...sections.flatMap(section => 
@@ -20,14 +21,20 @@ export function normalizeSeatPositions(seatPlan: SeatPlan): SeatPlan {
                 row.seats.map(seat => seat.x)
             )
         ));
+        parentMinY[parentKey] = Math.min(...sections.flatMap(section => 
+            section.rows.flatMap(row => 
+                row.seats.map(seat => seat.y)
+            )
+        ));
     }
     
-    // Normalize each section based on its parent section's minimum x
+    // Normalize each section based on its parent section's minimum x and y
     return {
         ...seatPlan,
         sections: seatPlan.sections.map(section => {
             const parentKey = section.parentSection || 'Main';
-            const shiftAmount = parentMinX[parentKey];
+            const shiftAmountX = parentMinX[parentKey];
+            const shiftAmountY = parentMinY[parentKey];
             
             return {
                 ...section,
@@ -35,7 +42,8 @@ export function normalizeSeatPositions(seatPlan: SeatPlan): SeatPlan {
                     ...row,
                     seats: row.seats.map(seat => ({
                         ...seat,
-                        x: seat.x - shiftAmount + 10
+                        x: seat.x - shiftAmountX + 10,
+                        y: seat.y - shiftAmountY + 15 // Set topmost seat to y=5
                     }))
                 }))
             };

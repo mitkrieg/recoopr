@@ -11,12 +11,14 @@ import {
   IconFileWord,
   IconFolder,
   IconHelp,
-  IconInnerShadowTop,
+  IconTheater,
   IconListDetails,
   IconReport,
   IconSearch,
   IconSettings,
   IconUsers,
+  IconFileSpreadsheet,
+  IconMasksTheater,
 } from "@tabler/icons-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -32,23 +34,29 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import Link from "next/link"
+import { CircleIcon, Drama } from 'lucide-react';
+import useSWR from "swr"
+import { redirect } from "next/navigation"
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Productions",
       url: "/productions",
-      icon: IconDashboard,
+      icon: IconMasksTheater,
     },
     {
       title: "Theaters",
       url: "/productions/theaters",
-      icon: IconListDetails,
+      icon: IconTheater,
+    },
+    {
+      title: "Budgets",
+      url: "#",
+      icon: IconFileSpreadsheet,
     },
     {
       title: "Analytics",
@@ -56,12 +64,7 @@ const data = {
       icon: IconChartBar,
     },
     {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
-    },
-    {
-      title: "Team",
+      title: "Investors",
       url: "#",
       icon: IconUsers,
     },
@@ -115,28 +118,23 @@ const data = {
     },
   ],
   navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
+    // {
+    //   title: "Settings",
+    //   url: "#",
+    //   icon: IconSettings,
+    // },
     {
       title: "Get Help",
       url: "#",
       icon: IconHelp,
     },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
+    // {
+    //   title: "Search",
+    //   url: "#",
+    //   icon: IconSearch,
+    // },
   ],
   documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
-    },
     {
       name: "Reports",
       url: "#",
@@ -151,6 +149,12 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { data: user, error, isLoading: isUserLoading } = useSWR('/api/user', fetcher);
+
+  if (!user) {
+    redirect('/sign-in');
+  }
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -160,10 +164,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
-                {/* <IconInnerShadowTop className="!size-5" /> */}
-                {/* <span className="text-base font-semibold">Acme Inc.</span> */}
-              </a>
+              <Link href="/" className="flex items-center">
+                <CircleIcon className="h-6 w-6 text-orange-500" />
+                <span className="ml-2 text-xl font-semibold text-gray-900">ReCoopr</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -174,7 +178,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   )

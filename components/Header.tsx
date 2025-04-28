@@ -39,7 +39,7 @@ function UserMenu() {
           Pricing
         </Link>
         <Button asChild className="rounded-full">
-          <Link href="/sign-up">Sign Up</Link>
+          <Link href="/sign-up">Sign Up / Sign In</Link>
         </Button>
       </>
     );

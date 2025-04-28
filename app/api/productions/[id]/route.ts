@@ -16,7 +16,10 @@ export async function GET(
 
     try {
         const production = await db.select().from(productions).where(eq(productions.id, productionId));
-        return NextResponse.json(production);
+        if (production.length === 0) {
+            return NextResponse.json({ error: 'Production not found' }, { status: 404 });
+        }
+        return NextResponse.json(production[0]);
     } catch (error) {
         console.error(`Error fetching production ${productionId}:`, error);
         return NextResponse.json({ error: 'Failed to fetch production' }, { status: 500 });

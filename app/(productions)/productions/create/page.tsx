@@ -25,7 +25,9 @@ import useSWR from 'swr';
 import { SeatMap } from "@/components/seat-map"
 import { PricingPicker, PricePoint } from "@/components/pricing-picker"
 import { SeatPlan } from "@/types/seat-plan"
-
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { SeatMapEditor } from "@/components/seat-map-editor"
 type Theater = {
   id: number
   name: string
@@ -59,7 +61,20 @@ function InputForm() {
   const [pricePoints, setPricePoints] = useState<PricePoint[]>([]);
   const [selectedPricePoint, setSelectedPricePoint] = useState<PricePoint | null>(null);
   const [seatPlan, setSeatPlan] = useState<SeatPlan | null>(null);
+  const [isSavingScenario, setIsSavingScenario] = useState(false);
+  const [savedScenarios, setSavedScenarios] = useState<Array<{
+    id: number;
+    name: string;
+    description: string;
+    seatmap: SeatPlan;
+    pricing: PricePoint[];
+  }>>([]);
+  const [selectedScenario, setSelectedScenario] = useState<number | null>(null);
+  const [isLoadingScenarios, setIsLoadingScenarios] = useState(false);
   const router = useRouter();
+  const [scenarioName, setScenarioName] = useState('');
+  const [scenarioDescription, setScenarioDescription] = useState('');
+  const [editingScenarioId, setEditingScenarioId] = useState<number | null>(null);
   
   useEffect(() => {
     async function fetchTheaters() {
@@ -104,6 +119,12 @@ function InputForm() {
     
     fetchSeatPlan();
   }, [selectedVenue]);
+
+  useEffect(() => {
+    if (createdProduction?.id) {
+      loadScenarios();
+    }
+  }, [createdProduction?.id]);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -199,37 +220,247 @@ function InputForm() {
     }
   }
 
+  const handleSaveScenario = async () => {
+    if (!selectedVenue || !seatPlan || !pricePoints.length) {
+      toast.error('Please select a venue and set up pricing before saving');
+      return;
+    }
+
+    if (!scenarioName.trim()) {
+      toast.error('Please enter a scenario name');
+      return;
+    }
+
+    setIsSavingScenario(true);
+    try {
+      const response = await fetch('/api/scenarios', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: scenarioName,
+          description: scenarioDescription,
+          productionId: createdProduction?.id,
+          theaterId: selectedVenue,
+          seatmap: seatPlan,
+          pricing: pricePoints
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save scenario');
+      }
+
+      const savedScenario = await response.json();
+      toast.success('Scenario saved successfully');
+      router.push(`/scenarios/${savedScenario.id}`);
+    } catch (error) {
+      console.error('Error saving scenario:', error);
+      toast.error('Failed to save scenario');
+    } finally {
+      setIsSavingScenario(false);
+    }
+  };
+
+  const handleUpdateScenario = async () => {
+    if (!editingScenarioId || !selectedVenue || !seatPlan || !pricePoints.length) {
+      toast.error('Please select a venue and set up pricing before saving');
+      return;
+    }
+
+    if (!scenarioName.trim()) {
+      toast.error('Please enter a scenario name');
+      return;
+    }
+
+    setIsSavingScenario(true);
+    try {
+      const response = await fetch(`/api/scenarios/${editingScenarioId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: scenarioName,
+          description: scenarioDescription,
+          theaterId: selectedVenue,
+          seatmap: seatPlan,
+          pricing: pricePoints
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update scenario');
+      }
+
+      toast.success('Scenario updated successfully');
+      setEditingScenarioId(null);
+      loadScenarios(); // Refresh the scenarios list
+    } catch (error) {
+      console.error('Error updating scenario:', error);
+      toast.error('Failed to update scenario');
+    } finally {
+      setIsSavingScenario(false);
+    }
+  };
+
+  const loadScenarios = async () => {
+    setIsLoadingScenarios(true);
+    try {
+      const response = await fetch(`/api/scenarios?productionId=${createdProduction?.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to load scenarios');
+      }
+      const scenarios = await response.json();
+      setSavedScenarios(scenarios);
+    } catch (error) {
+      console.error('Error loading scenarios:', error);
+      toast.error('Failed to load scenarios');
+    } finally {
+      setIsLoadingScenarios(false);
+    }
+  };
+
+  const handleLoadScenario = async () => {
+    if (!selectedScenario) {
+      toast.error('Please select a scenario to load');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/scenarios/${selectedScenario}`);
+      if (!response.ok) {
+        throw new Error('Failed to load scenario');
+      }
+      const scenario = await response.json();
+      
+      setSeatPlan(scenario.seatmap);
+      setPricePoints(scenario.pricing);
+      setSelectedVenue(scenario.theaterId);
+      setScenarioName(scenario.name);
+      setScenarioDescription(scenario.description);
+      setEditingScenarioId(scenario.id);
+      
+      toast.success('Scenario loaded successfully');
+    } catch (error) {
+      console.error('Error loading scenario:', error);
+      toast.error('Failed to load scenario');
+    }
+  };
+
   if (createdProduction) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold">{createdProduction.name}</h1>
-        <div className="space-y-2">
-          <p>Production {new Date(createdProduction.startDate).toLocaleDateString()} - {new Date(createdProduction.endDate).toLocaleDateString()}</p>
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">{createdProduction.name}</h1>
+          <div className="flex gap-2">
+            <Select 
+              value={selectedScenario?.toString()} 
+              onValueChange={(value) => setSelectedScenario(Number(value))}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select a scenario" />
+              </SelectTrigger>
+              <SelectContent>
+                {isLoadingScenarios ? (
+                  <SelectItem value="loading" disabled>Loading scenarios...</SelectItem>
+                ) : savedScenarios.length === 0 ? (
+                  <SelectItem value="none" disabled>No saved scenarios</SelectItem>
+                ) : (
+                  savedScenarios.map(scenario => (
+                    <SelectItem key={scenario.id} value={scenario.id.toString()}>
+                      {scenario.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            <Button 
+              onClick={handleLoadScenario} 
+              disabled={!selectedScenario}
+            >
+              Load Scenario
+            </Button>
+          </div>
         </div>
-        <Button onClick={() => router.push(`/productions/scenario?productionId=${createdProduction.id}`)}>
-          Continue to Scenario
-        </Button>
+        <div className="space-y-2">
+          <p>{new Date(createdProduction.startDate).toLocaleDateString()} - {new Date(createdProduction.endDate).toLocaleDateString()}</p>
+        </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="scenario-name">Scenario Name</Label>
+            <Input
+              id="scenario-name"
+              value={scenarioName}
+              onChange={(e) => setScenarioName(e.target.value)}
+              placeholder="Enter scenario name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="scenario-description">Description</Label>
+            <Textarea
+              id="scenario-description"
+              value={scenarioDescription}
+              onChange={(e) => setScenarioDescription(e.target.value)}
+              placeholder="Enter scenario description"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Venue</Label>
+            <Select 
+              value={selectedVenue?.toString()} 
+              onValueChange={(value) => setSelectedVenue(Number(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a venue" />
+              </SelectTrigger>
+              <SelectContent>
+                {isLoading ? (
+                  <SelectItem value="loading" disabled>Loading venues...</SelectItem>
+                ) : theaters.length === 0 ? (
+                  <SelectItem value="none" disabled>No venues available</SelectItem>
+                ) : (
+                  theaters.map((theater) => (
+                    <SelectItem key={theater.id} value={theater.id.toString()}>
+                      {theater.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex justify-end gap-2">
+            {editingScenarioId ? (
+              <Button 
+                onClick={handleUpdateScenario} 
+                disabled={isSavingScenario || !scenarioName.trim()}
+              >
+                {isSavingScenario ? 'Saving...' : 'Update Scenario'}
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleSaveScenario} 
+                disabled={isSavingScenario || !scenarioName.trim()}
+              >
+                {isSavingScenario ? 'Saving...' : 'Save New Scenario'}
+              </Button>
+            )}
+          </div>
+        </div>
         <div className="flex gap-4 w-full">
           <div className="flex-1">
             {selectedVenue && (
-              <SeatMap 
+              <SeatMapEditor 
                 theater={theaters.find(t => t.id === selectedVenue)!} 
                 pricePoints={pricePoints}
                 selectedPricePoint={selectedPricePoint}
                 onSeatClick={handleSeatClick}
                 seatPlan={seatPlan}
+                onPricePointsChange={setPricePoints}
+                onPricePointSelect={handlePricePointSelect}
               />
             )}
-          </div>
-          <div className="w-60 shrink-0">
-            <div className="sticky top-4">
-              <PricingPicker 
-                pricePoints={pricePoints} 
-                onChange={setPricePoints}
-                selectedPricePoint={selectedPricePoint}
-                onSelectPricePoint={handlePricePointSelect}
-              />
-            </div>
           </div>
         </div>
       </div>

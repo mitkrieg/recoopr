@@ -3,6 +3,9 @@ import { productions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export default async function ProductionsPage() {
   const session = await getSession();
@@ -18,21 +21,43 @@ export default async function ProductionsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Your Productions</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Your Productions</h1>
+        <Button asChild>
+          <Link href="/productions/create">Create New Production</Link>
+        </Button>
+      </div>
       {userProductions.length === 0 ? (
-        <p>You don't have any productions yet. Create one to get started!</p>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-gray-500">You don't have any productions yet. Create one to get started!</p>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {userProductions.map((production) => (
-            <div key={production.id} className="border rounded-lg p-4">
-              <h2 className="text-xl font-semibold">{production.name}</h2>
-              <p className="text-gray-500">
-                {new Date(production.startDate).toLocaleDateString()} -{' '}
-                {production.endDate
-                  ? new Date(production.endDate).toLocaleDateString()
-                  : 'Ongoing'}
-              </p>
-            </div>
+            <Link 
+              key={production.id} 
+              href={`/productions/${production.id}`}
+              className="block"
+            >
+              <Card className="h-full hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <CardTitle>{production.name}</CardTitle>
+                  <CardDescription>
+                    {new Date(production.startDate).toLocaleDateString()} -{' '}
+                    {production.endDate
+                      ? new Date(production.endDate).toLocaleDateString()
+                      : 'Ongoing'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-500">
+                    {production.capitalization ? `Capitalization: $${production.capitalization.toLocaleString()}` : 'No capitalization set'}
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}

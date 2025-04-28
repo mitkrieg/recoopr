@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SeatMap } from "@/components/seat-map";
 import { PricingPicker, PricePoint } from "@/components/pricing-picker";
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { SeatPlan } from "@/types/seat-plan";
 
 type Theater = {
     id: number;
@@ -16,6 +16,8 @@ export default function ProductionsPage() {
     const [theaters, setTheaters] = useState<Theater[]>([]);
     const [selectedTheater, setSelectedTheater] = useState<Theater | null>(null);
     const [pricePoints, setPricePoints] = useState<PricePoint[]>([]);
+    const [selectedPricePoint, setSelectedPricePoint] = useState<PricePoint | null>(null);
+    const [seatPlan, setSeatPlan] = useState<SeatPlan | null>(null);
 
     useEffect(() => {
         fetch('/api/theaters')
@@ -31,6 +33,11 @@ export default function ProductionsPage() {
         if (theater) {
             setSelectedTheater(theater);
         }
+    };
+
+    const handleSeatClick = (sectionId: number, rowId: number, seatId: number) => {
+        if (!selectedPricePoint || !seatPlan) return;
+        // Add your seat click logic here
     };
 
     if (!selectedTheater) {
@@ -59,11 +66,22 @@ export default function ProductionsPage() {
             </div>
             <div className="flex gap-4 mt-4">
                 <div className="flex-1">
-                    <SeatMap theater={selectedTheater} pricePoints={pricePoints} />
+                    <SeatMap 
+                        theater={selectedTheater} 
+                        pricePoints={pricePoints}
+                        selectedPricePoint={selectedPricePoint}
+                        onSeatClick={handleSeatClick}
+                        seatPlan={seatPlan}
+                    />
                 </div>
                 <div className="w-60 shrink-0">
                     <div className="sticky top-4">
-                        <PricingPicker pricePoints={pricePoints} onChange={setPricePoints} />
+                        <PricingPicker 
+                            pricePoints={pricePoints} 
+                            onChange={setPricePoints}
+                            selectedPricePoint={selectedPricePoint}
+                            onSelectPricePoint={setSelectedPricePoint}
+                        />
                     </div>
                 </div>
             </div>
