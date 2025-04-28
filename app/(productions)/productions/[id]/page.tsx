@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { format, isValid } from "date-fns"
 import { use } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { formatCurrency } from "@/components/price-chart"
 
 type Scenario = {
   id: number
@@ -112,7 +113,7 @@ export default function ProductionPage({ params }: { params: Promise<{ id: strin
         <div>
           <h1 className="text-2xl font-bold">{production.name}</h1>
           <p className="text-gray-500">
-            {production.capitalization}
+            Captiolization {formatCurrency(Number(production.capitalization))}
           </p>
           <p className="text-gray-500">
             {formatDate(production.startDate)} - {formatDate(production.endDate)}

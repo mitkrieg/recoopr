@@ -36,7 +36,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-const formatCurrency = (value: number) => {
+export const formatCurrency = (value: number) => {
     if (value >= 1000000) {
         return `$${(value / 1000000).toFixed(1)}M`;
     }
