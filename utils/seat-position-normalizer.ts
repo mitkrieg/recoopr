@@ -18,12 +18,12 @@ export function normalizeSeatPositions(seatPlan: SeatPlan): SeatPlan {
     for (const [parentKey, sections] of Object.entries(sectionsByParent)) {
         parentMinX[parentKey] = Math.min(...sections.flatMap(section => 
             section.rows.flatMap(row => 
-                row.seats.map(seat => seat.x)
+                row.seats.map(seat => seat.x).filter((x): x is number => x !== null)
             )
         ));
         parentMinY[parentKey] = Math.min(...sections.flatMap(section => 
             section.rows.flatMap(row => 
-                row.seats.map(seat => seat.y)
+                row.seats.map(seat => seat.y).filter((y): y is number => y !== null)
             )
         ));
     }
@@ -42,8 +42,8 @@ export function normalizeSeatPositions(seatPlan: SeatPlan): SeatPlan {
                     ...row,
                     seats: row.seats.map(seat => ({
                         ...seat,
-                        x: seat.x - shiftAmountX + 10,
-                        y: seat.y - shiftAmountY + 15 // Set topmost seat to y=5
+                        x: seat.x !== null ? seat.x - shiftAmountX + 10 : null,
+                        y: seat.y !== null ? seat.y - shiftAmountY + 15 : null
                     }))
                 }))
             };
