@@ -7,18 +7,19 @@ export type Theater = {
 export type Seat = {
     id: number;
     seatNumber: string;
-    displayNumber: string;
+    displayNumber: string | null;
     price: number | null;
-    status: string;
-    accessible: boolean;
-    x: number;
-    y: number;
+    status: string | null;
+    accessible: boolean | null;
+    x: number | null;
+    y: number | null;
 }
 
 export type Row = {
     id: number;
     label: string;
     displayLabel: string | null;
+    sectionId: number;
     seats: Seat[];
 }
 
@@ -27,8 +28,9 @@ export type Section = {
     name: string;
     categoryKey: number | null;
     color: string | null;
-    label: string;
+    theaterId: number;
     parentSection: string | null;
+    label: string;
     rows: Row[];
 }
 

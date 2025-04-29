@@ -1,0 +1,158 @@
+'use client';
+
+import { useState, useEffect } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SeatMapEditor } from "@/components/seat-map-editor";
+import { getTheaters, getTheaterSeatPlan } from "../actions";
+import { toast } from "sonner";
+import { SeatPlan } from "@/types/seat-plan";
+import { PricePoint } from "@/components/pricing-picker";
+import { Header } from "@/components/Header";
+import { IconTicket } from "@tabler/icons-react";
+import Link from "next/link";
+
+type Theater = {
+  id: number;
+  name: string;
+  venueSlug: string | null;
+}
+
+export default function TheatersPage() {
+  const [theaters, setTheaters] = useState<Theater[]>([]);
+  const [selectedTheater, setSelectedTheater] = useState<Theater | null>(null);
+  const [seatPlan, setSeatPlan] = useState<SeatPlan | null>(null);
+  const [pricePoints, setPricePoints] = useState<PricePoint[]>([]);
+  const [selectedPricePoint, setSelectedPricePoint] = useState<PricePoint | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load theaters
+  useEffect(() => {
+    setIsLoading(true);
+    setError(null);
+    getTheaters().then(({ theaters: data, error }) => {
+      if (error) {
+        console.error('Error fetching theaters:', error);
+        setError('Failed to load theaters');
+        return;
+      }
+      if (!data) {
+        setError('No theaters data received');
+        return;
+      }
+      setTheaters(data);
+      if (data.length > 0) {
+        setSelectedTheater(data[0]);
+      }
+    }).finally(() => {
+      setIsLoading(false);
+    });
+  }, []);
+
+  // Load seat plan when theater changes
+  useEffect(() => {
+    if (!selectedTheater) return;
+
+    setIsLoading(true);
+    setError(null);
+    getTheaterSeatPlan(selectedTheater.id).then(({ seatPlan: data, error }) => {
+      if (error) {
+        console.error('Error fetching seat plan:', error);
+        setError('Failed to load seat plan');
+        return;
+      }
+      if (!data) {
+        setError('No seat plan data received');
+        return;
+      }
+      setSeatPlan(data);
+    }).finally(() => {
+      setIsLoading(false);
+    });
+  }, [selectedTheater]);
+
+  const handleTheaterChange = (value: string) => {
+    const theater = theaters.find(t => t.id === Number(value));
+    if (theater) {
+      setSelectedTheater(theater);
+    }
+  };
+
+  const handleSeatClick = (sectionId: number, rowId: number, seatId: number) => {
+    // No-op since we're just viewing
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <div className="flex items-center justify-center flex-1">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <div className="flex items-center justify-center flex-1 text-red-500">{error}</div>
+      </div>
+    );
+  }
+
+  if (!selectedTheater) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <div className="flex items-center justify-center flex-1">No theaters available</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <div className="flex flex-row items-center justify-between mb-4">
+        <a href="/" className="flex flex-row items-center p-3">
+          <IconTicket className="h-6 w-6 text-orange-500 mr-2" />
+          <h1 className="text-3xl font-bold leading-tight text-gray-900">ReCoopr</h1>
+        </a>
+        <Header />
+      </div>
+      
+      <div className="container mx-auto p-4 w-full flex-1">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <IconTicket className="h-6 w-6 text-orange-500 mr-2" />
+            <h1 className="text-3xl font-bold leading-tight text-gray-900">Theaters</h1>
+          </div>
+        </div>
+        <div className="mt-4">
+          <Select onValueChange={handleTheaterChange} defaultValue={selectedTheater.id.toString()}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a theater" />
+            </SelectTrigger>
+            <SelectContent>
+              {theaters.map(t => (
+                <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="mt-4">
+          {selectedTheater && seatPlan && (
+            <SeatMapEditor
+              theater={selectedTheater}
+              pricePoints={pricePoints}
+              selectedPricePoint={selectedPricePoint}
+              onSeatClick={handleSeatClick}
+              seatPlan={seatPlan}
+              onPricePointsChange={setPricePoints}
+              onPricePointSelect={setSelectedPricePoint}
+              onSeatPlanUpdate={setSeatPlan}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

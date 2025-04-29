@@ -5,6 +5,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SeatMapEditor } from "@/components/seat-map-editor";
 import { PricingPicker, PricePoint } from "@/components/pricing-picker";
 import { SeatPlan } from "@/types/seat-plan";
+import { getTheaters, getTheaterSeatPlan } from "../../actions"
+import { toast } from "sonner";
+import { SeatMap } from "@/components/seat-map";
 
 type Theater = {
     id: number;
@@ -18,15 +21,53 @@ export default function ProductionsPage() {
     const [pricePoints, setPricePoints] = useState<PricePoint[]>([]);
     const [selectedPricePoint, setSelectedPricePoint] = useState<PricePoint | null>(null);
     const [seatPlan, setSeatPlan] = useState<SeatPlan | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
+    // Load theaters
     useEffect(() => {
-        fetch('/api/theaters')
-            .then(res => res.json())
-            .then(data => {
-                setTheaters(data);
+        setIsLoading(true);
+        setError(null);
+        getTheaters().then(({ theaters: data, error }) => {
+            if (error) {
+                console.error('Error fetching theaters:', error);
+                setError('Failed to load theaters');
+                return;
+            }
+            if (!data) {
+                setError('No theaters data received');
+                return;
+            }
+            setTheaters(data);
+            if (data.length > 0) {
                 setSelectedTheater(data[0]);
-            });
+            }
+        }).finally(() => {
+            setIsLoading(false);
+        });
     }, []);
+
+    // Load seat plan when theater changes
+    useEffect(() => {
+        if (!selectedTheater) return;
+
+        setIsLoading(true);
+        setError(null);
+        getTheaterSeatPlan(selectedTheater.id).then(({ seatPlan: data, error }) => {
+            if (error) {
+                console.error('Error fetching seat plan:', error);
+                setError('Failed to load seat plan');
+                return;
+            }
+            if (!data) {
+                setError('No seat plan data received');
+                return;
+            }
+            setSeatPlan(data);
+        }).finally(() => {
+            setIsLoading(false);
+        });
+    }, [selectedTheater]);
 
     const handleTheaterChange = (value: string) => {
         const theater = theaters.find(t => t.id === Number(value));
@@ -40,8 +81,16 @@ export default function ProductionsPage() {
         // Add your seat click logic here
     };
 
+    if (isLoading) {
+        return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    }
+
+    if (error) {
+        return <div className="flex items-center justify-center min-h-screen text-red-500">{error}</div>;
+    }
+
     if (!selectedTheater) {
-        return <div>No theater selected</div>;
+        return <div className="flex items-center justify-center min-h-screen">No theaters available</div>;
     }
 
     // create a select menu for the theaters

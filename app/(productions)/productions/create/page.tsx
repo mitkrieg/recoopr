@@ -6,6 +6,7 @@ import { z } from "zod"
 import { useEffect, useState, useCallback } from "react"
 import { redirect, useRouter } from "next/navigation"
 import { normalizeSeatPositions } from "@/utils/seat-position-normalizer"
+import { createProduction, getTheaters, getTheaterSeatPlan, createScenario, updateScenario, getScenarios, getScenario } from "../../actions"
 
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -28,11 +29,7 @@ import { SeatPlan } from "@/types/seat-plan"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { SeatMapEditor } from "@/components/seat-map-editor"
-type Theater = {
-  id: number
-  name: string
-  venueSlug: string | null
-}
+import { Theater } from "@/types/theater"
 
 const FormSchema = z.object({
   name: z.string().min(2, {
@@ -50,25 +47,38 @@ const FormSchema = z.object({
   })
 })
 
+type ProductionResponse = {
+  id: number;
+  name: string;
+  startDate: string;
+  endDate: string | null;
+  userId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  capitalization: number | null;
+}
+
 const fetcher = (url: string) => fetch(url).then(res => res.json())
+
+interface SavedScenario {
+  id: number;
+  name: string;
+  description: string;
+  seatmap: SeatPlan;
+  pricing: PricePoint[];
+}
 
 function InputForm() {
   const [theaters, setTheaters] = useState<Theater[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [createdProduction, setCreatedProduction] = useState<{id: number, name: string, startDate: string, endDate: string} | null>(null);
+  const [createdProduction, setCreatedProduction] = useState<ProductionResponse | null>(null);
   const [selectedVenue, setSelectedVenue] = useState<number | null>(null);
   const [pricePoints, setPricePoints] = useState<PricePoint[]>([]);
   const [selectedPricePoint, setSelectedPricePoint] = useState<PricePoint | null>(null);
   const [seatPlan, setSeatPlan] = useState<SeatPlan | null>(null);
   const [isSavingScenario, setIsSavingScenario] = useState(false);
-  const [savedScenarios, setSavedScenarios] = useState<Array<{
-    id: number;
-    name: string;
-    description: string;
-    seatmap: SeatPlan;
-    pricing: PricePoint[];
-  }>>([]);
+  const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>([]);
   const [selectedScenario, setSelectedScenario] = useState<number | null>(null);
   const [isLoadingScenarios, setIsLoadingScenarios] = useState(false);
   const router = useRouter();
@@ -79,12 +89,13 @@ function InputForm() {
   useEffect(() => {
     async function fetchTheaters() {
       try {
-        const response = await fetch('/api/theaters');
-        if (!response.ok) {
-          throw new Error('Failed to fetch theaters');
+        const { theaters: fetchedTheaters, error } = await getTheaters();
+        if (error) {
+          throw new Error(error);
         }
-        const data = await response.json();
-        setTheaters(data);
+        if (fetchedTheaters) {
+          setTheaters(fetchedTheaters);
+        }
       } catch (error) {
         console.error('Error fetching theaters:', error);
         toast('Failed to load theaters', {
@@ -103,12 +114,13 @@ function InputForm() {
       if (!selectedVenue) return;
       
       try {
-        const response = await fetch(`/api/theaters/${selectedVenue}/seatplan`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch seat plan');
+        const { seatPlan: fetchedSeatPlan, error } = await getTheaterSeatPlan(selectedVenue);
+        if (error) {
+          throw new Error(error);
         }
-        const data = await response.json();
-        setSeatPlan(normalizeSeatPositions(data));
+        if (fetchedSeatPlan) {
+          setSeatPlan(normalizeSeatPositions(fetchedSeatPlan));
+        }
       } catch (error) {
         console.error('Error fetching seat plan:', error);
         toast('Failed to load seat plan', {
@@ -190,28 +202,23 @@ function InputForm() {
     setIsSubmitting(true);
     setSelectedVenue(Number(data.venue));
     try {
-      const response = await fetch('/api/productions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: data.name,
-          startDate: data.performanceDates.from.toISOString(),
-          endDate: data.performanceDates.to.toISOString(),
-          capitalization: data.capitalization.capitalization,
-        }),
-      });
+      const formData = new FormData();
+      formData.append('name', data.name);
+      formData.append('startDate', data.performanceDates.from.toISOString());
+      formData.append('endDate', data.performanceDates.to.toISOString());
+      formData.append('capitalization', data.capitalization.capitalization.toString());
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create production');
+      const { production, error } = await createProduction(formData);
+      
+      if (error) {
+        throw new Error(error);
       }
 
-      const result = await response.json();
-      console.log('API Response:', result);
-      toast.success('Production created successfully');
-      setCreatedProduction(result);
+      if (production) {
+        console.log('API Response:', production);
+        toast.success('Production created successfully');
+        setCreatedProduction(production);
+      }
     } catch (error) {
       console.error('Error creating production:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create production');
@@ -221,7 +228,7 @@ function InputForm() {
   }
 
   const handleSaveScenario = async () => {
-    if (!selectedVenue || !seatPlan || !pricePoints.length) {
+    if (!selectedVenue || !seatPlan || !pricePoints.length || !createdProduction?.id) {
       toast.error('Please select a venue and set up pricing before saving');
       return;
     }
@@ -233,28 +240,21 @@ function InputForm() {
 
     setIsSavingScenario(true);
     try {
-      const response = await fetch('/api/scenarios', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: scenarioName,
-          description: scenarioDescription,
-          productionId: createdProduction?.id,
-          theaterId: selectedVenue,
-          seatmap: seatPlan,
-          pricing: pricePoints
-        }),
+      const { scenario, error } = await createScenario({
+        name: scenarioName,
+        description: scenarioDescription,
+        productionId: createdProduction.id,
+        theaterId: selectedVenue,
+        seatmap: seatPlan,
+        pricing: pricePoints
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to save scenario');
+      if (error || !scenario) {
+        throw new Error(error || 'Failed to create scenario');
       }
 
-      const savedScenario = await response.json();
       toast.success('Scenario saved successfully');
-      router.push(`/scenarios/${savedScenario.id}`);
+      router.push(`/scenarios/${scenario.id}`);
     } catch (error) {
       console.error('Error saving scenario:', error);
       toast.error('Failed to save scenario');
@@ -276,22 +276,16 @@ function InputForm() {
 
     setIsSavingScenario(true);
     try {
-      const response = await fetch(`/api/scenarios/${editingScenarioId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: scenarioName,
-          description: scenarioDescription,
-          theaterId: selectedVenue,
-          seatmap: seatPlan,
-          pricing: pricePoints
-        }),
+      const { scenario, error } = await updateScenario(editingScenarioId, {
+        name: scenarioName,
+        description: scenarioDescription,
+        theaterId: selectedVenue,
+        seatmap: seatPlan,
+        pricing: pricePoints
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update scenario');
+      if (error || !scenario) {
+        throw new Error(error || 'Failed to update scenario');
       }
 
       toast.success('Scenario updated successfully');
@@ -308,12 +302,17 @@ function InputForm() {
   const loadScenarios = async () => {
     setIsLoadingScenarios(true);
     try {
-      const response = await fetch(`/api/scenarios?productionId=${createdProduction?.id}`);
-      if (!response.ok) {
-        throw new Error('Failed to load scenarios');
+      const { scenarios, error } = await getScenarios(createdProduction?.id);
+      if (error || !scenarios) {
+        throw new Error(error || 'Failed to load scenarios');
       }
-      const scenarios = await response.json();
-      setSavedScenarios(scenarios);
+      setSavedScenarios(scenarios.map(s => ({
+        id: s.id,
+        name: s.name,
+        description: s.description || '',
+        seatmap: s.seatmap as SeatPlan,
+        pricing: s.pricing as PricePoint[]
+      })));
     } catch (error) {
       console.error('Error loading scenarios:', error);
       toast.error('Failed to load scenarios');
@@ -329,17 +328,16 @@ function InputForm() {
     }
 
     try {
-      const response = await fetch(`/api/scenarios/${selectedScenario}`);
-      if (!response.ok) {
-        throw new Error('Failed to load scenario');
+      const { scenario, error } = await getScenario(selectedScenario);
+      if (error || !scenario) {
+        throw new Error(error || 'Failed to load scenario');
       }
-      const scenario = await response.json();
       
-      setSeatPlan(scenario.seatmap);
-      setPricePoints(scenario.pricing);
+      setSeatPlan(scenario.seatmap as SeatPlan);
+      setPricePoints(scenario.pricing as PricePoint[]);
       setSelectedVenue(scenario.theaterId);
       setScenarioName(scenario.name);
-      setScenarioDescription(scenario.description);
+      setScenarioDescription(scenario.description || '');
       setEditingScenarioId(scenario.id);
       
       toast.success('Scenario loaded successfully');
@@ -385,7 +383,7 @@ function InputForm() {
           </div>
         </div>
         <div className="space-y-2">
-          <p>{new Date(createdProduction.startDate).toLocaleDateString()} - {new Date(createdProduction.endDate).toLocaleDateString()}</p>
+          <p>{new Date(createdProduction.startDate).toLocaleDateString()} - {createdProduction.endDate ? new Date(createdProduction.endDate).toLocaleDateString() : 'No end date'}</p>
         </div>
         <div className="space-y-4">
           <div className="space-y-2">
@@ -480,9 +478,6 @@ function InputForm() {
               <FormControl>
                 <Input placeholder="West Side Story" {...field} />
               </FormControl>
-              {/* <FormDescription>
-                This is the name of the production.
-              </FormDescription> */}
               <FormMessage />
             </FormItem>
           )}
@@ -564,7 +559,6 @@ function InputForm() {
 }
 
 export default function CreateProductionPage() {
-
   const { data: user, error, isLoading: isUserLoading } = useSWR('/api/user', fetcher);
 
   if (!user) {

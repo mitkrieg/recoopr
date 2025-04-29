@@ -1,31 +1,37 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { toast } from "sonner"
 import { format, isValid } from "date-fns"
-import { use } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { formatCurrency } from "@/components/price-chart"
-
-type Scenario = {
-  id: number
-  name: string
-  description: string
-  theaterId: number
-  theaterName: string
-  updatedAt: string
-}
+import { getProduction, getScenarios, deleteScenario, getTheater, deleteProduction } from "../../actions"
 
 type Production = {
-  id: number
-  name: string
-  startDate: string
-  endDate: string
-  capitalization: string
-}
+  id: number;
+  name: string;
+  startDate: string;
+  endDate: string | null;
+  capitalization: number | null;
+  userId: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type Scenario = {
+  id: number;
+  name: string;
+  description: string | null;
+  theaterId: number;
+  productionId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  seatmap: any;
+  pricing: any[];
+};
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -34,68 +40,91 @@ const formatDate = (dateString: string) => {
 
 export default function ProductionPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const resolvedParams = use(params);
+  const id = Number(resolvedParams.id);
+  
   const [production, setProduction] = useState<Production | null>(null);
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
+  const [theaters, setTheaters] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [scenarioToDelete, setScenarioToDelete] = useState<Scenario | null>(null);
-  const { id } = use(params);
 
   useEffect(() => {
-    async function fetchData() {
+    async function loadData() {
       try {
-        // Fetch production
-        const productionResponse = await fetch(`/api/productions/${id}`);
-        if (!productionResponse.ok) {
-          if (productionResponse.status === 404) {
-            toast.error('Production not found');
-          } else {
-            throw new Error('Failed to fetch production');
-          }
-          return;
+        const { production, error: productionError } = await getProduction(id);
+        if (productionError || !production) {
+          throw new Error(productionError || 'Production not found');
         }
-        const productionData = await productionResponse.json();
-        setProduction(productionData);
+        setProduction(production);
 
-        // Fetch scenarios
-        const scenariosResponse = await fetch(`/api/scenarios?productionId=${id}`);
-        if (!scenariosResponse.ok) throw new Error('Failed to fetch scenarios');
-        const scenariosData = await scenariosResponse.json();
-        setScenarios(scenariosData);
+        const { scenarios, error: scenariosError } = await getScenarios(id);
+        if (scenariosError || !scenarios) {
+          throw new Error(scenariosError || 'Failed to load scenarios');
+        }
+        setScenarios(scenarios);
+
+        // Load theater names for all scenarios
+        const theaterIds = [...new Set(scenarios.map((s: Scenario) => s.theaterId))];
+        const theaterNames: Record<number, string> = {};
+        
+        await Promise.all(theaterIds.map(async (id) => {
+          const { theater, error } = await getTheater(id);
+          if (theater) {
+            theaterNames[id] = theater.name;
+          }
+        }));
+
+        setTheaters(theaterNames);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error loading data:', error);
         toast.error('Failed to load production data');
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchData();
+    loadData();
   }, [id]);
 
   const handleCreateScenario = () => {
     router.push(`/scenarios/create?productionId=${id}`);
   };
 
-  const handleDeleteScenario = async () => {
-    if (!scenarioToDelete) return;
-
+  const handleDeleteScenario = async (scenarioToDelete: Scenario) => {
     try {
-      const response = await fetch(`/api/scenarios/${scenarioToDelete.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete scenario');
+      const { error } = await deleteScenario(scenarioToDelete.id);
+      if (error) {
+        throw new Error(error);
       }
 
-      toast.success('Scenario deleted successfully');
       setScenarios(scenarios.filter(s => s.id !== scenarioToDelete.id));
-      setShowDeleteDialog(false);
-      setScenarioToDelete(null);
+      toast.success('Scenario deleted successfully');
     } catch (error) {
       console.error('Error deleting scenario:', error);
       toast.error('Failed to delete scenario');
+    }
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const handleDelete = async () => {
+    try {
+      const result = await deleteProduction(id);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success('Production deleted successfully');
+      router.push('/productions');
+    } catch (error) {
+      console.error('Error deleting production:', error);
+      toast.error('Failed to delete production');
+    } finally {
+      setShowDeleteDialog(false);
     }
   };
 
@@ -116,7 +145,7 @@ export default function ProductionPage({ params }: { params: Promise<{ id: strin
             Captiolization {formatCurrency(Number(production.capitalization))}
           </p>
           <p className="text-gray-500">
-            {formatDate(production.startDate)} - {formatDate(production.endDate)}
+            {formatDate(production.startDate)} - {formatDate(production.endDate || '')}
           </p>
         </div>
         <Button onClick={handleCreateScenario}>
@@ -156,12 +185,14 @@ export default function ProductionPage({ params }: { params: Promise<{ id: strin
                   <TableCell
                     onClick={() => router.push(`/scenarios/${scenario.id}`)}
                   >
-                    {scenario.theaterName}
+                    <div className="text-sm text-gray-500">
+                      {theaters[scenario.theaterId] || 'Unknown Theater'}
+                    </div>
                   </TableCell>
                   <TableCell
                     onClick={() => router.push(`/scenarios/${scenario.id}`)}
                   >
-                    {formatDate(scenario.updatedAt)}
+                    {formatDate(scenario.updatedAt.toISOString())}
                   </TableCell>
                   <TableCell>
                     <Button
@@ -183,22 +214,29 @@ export default function ProductionPage({ params }: { params: Promise<{ id: strin
         </Table>
       </div>
 
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">{production?.name}</h1>
+        <Button variant="destructive" onClick={handleDeleteClick}>
+          Delete Production
+        </Button>
+      </div>
+
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Scenario</DialogTitle>
+            <DialogTitle>Delete Production</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the scenario "{scenarioToDelete?.name}"? This action cannot be undone.
+              Are you sure you want to delete this production? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <div className="flex justify-end gap-4 mt-4">
             <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteScenario}>
+            <Button variant="destructive" onClick={handleDelete}>
               Delete
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

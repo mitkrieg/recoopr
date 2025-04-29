@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { SeatMap } from "@/components/seat-map"
 import { PricingPicker, PricePoint } from "@/components/pricing-picker"
@@ -20,73 +20,82 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { use } from "react"
 import { SeatMapEditor } from "@/components/seat-map-editor"
+import { getTheaters, getTheaterSeatPlan, getScenario, updateScenario, deleteScenario } from "../../actions"
 
 type Theater = {
-  id: number
-  name: string
-  venueSlug: string | null
-}
+  id: number;
+  name: string;
+  url: string | null;
+  venueId: string | null;
+  venueSlug: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 type Scenario = {
-  id: number
-  productionId: number
-  name: string
-  description: string
-  theaterId: number
-  seatmap: SeatPlan
-  pricing: PricePoint[]
-}
+  id: number;
+  name: string;
+  description: string | null;
+  theaterId: number;
+  productionId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  seatmap: any;
+  pricing: any[];
+};
 
 export default function ScenarioPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
   const router = useRouter();
-  const [scenario, setScenario] = useState<Scenario | null>(null);
+  const resolvedParams = use(params);
+  const id = Number(resolvedParams.id);
+  
   const [theaters, setTheaters] = useState<Theater[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [selectedVenue, setSelectedVenue] = useState<number | null>(null);
+  const [scenario, setScenario] = useState<Scenario | null>(null);
+  const [selectedTheater, setSelectedTheater] = useState<Theater | null>(null);
+  const [seatPlan, setSeatPlan] = useState<SeatPlan | null>(null);
   const [pricePoints, setPricePoints] = useState<PricePoint[]>([]);
   const [selectedPricePoint, setSelectedPricePoint] = useState<PricePoint | null>(null);
-  const [seatPlan, setSeatPlan] = useState<SeatPlan | null>(null);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [showVenueChangeDialog, setShowVenueChangeDialog] = useState(false);
   const [pendingVenueChange, setPendingVenueChange] = useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
+    async function loadData() {
       try {
-        // Fetch theaters
-        const theatersResponse = await fetch('/api/theaters');
-        if (!theatersResponse.ok) throw new Error('Failed to fetch theaters');
-        const theatersData = await theatersResponse.json();
-        setTheaters(theatersData);
+        const { theaters, error: theatersError } = await getTheaters();
+        if (theatersError || !theaters) {
+          throw new Error(theatersError || 'Failed to load theaters');
+        }
+        setTheaters(theaters);
 
-        // Fetch scenario
-        const scenarioResponse = await fetch(`/api/scenarios/${resolvedParams.id}`);
-        if (!scenarioResponse.ok) throw new Error('Failed to fetch scenario');
-        const scenarioData = await scenarioResponse.json();
-        setScenario(scenarioData);
-        
-        // Set form values
-        setName(scenarioData.name);
-        setDescription(scenarioData.description);
-        setSelectedVenue(scenarioData.theaterId);
-        setPricePoints(scenarioData.pricing);
-        setSeatPlan(scenarioData.seatmap);
+        const { scenario, error: scenarioError } = await getScenario(id);
+        if (scenarioError || !scenario) {
+          throw new Error(scenarioError || 'Scenario not found');
+        }
+        setScenario(scenario);
+        setName(scenario.name);
+        setDescription(scenario.description || '');
+        const theater = theaters.find(t => t.id === scenario.theaterId);
+        if (theater) {
+          setSelectedTheater(theater);
+        }
+        setSeatPlan(scenario.seatmap);
+        setPricePoints(scenario.pricing);
       } catch (error) {
-        console.error('Error fetching data:', error);
-        toast('Failed to load scenario');
+        console.error('Error loading data:', error);
+        toast.error('Failed to load scenario data');
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchData();
-  }, [resolvedParams.id]);
+    loadData();
+  }, [id]);
 
   const handleSeatClick = (sectionId: number, rowId: number, seatId: number) => {
     if (!selectedPricePoint || !seatPlan) return;
@@ -123,79 +132,70 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
   };
 
   const handleSave = async () => {
-    if (!selectedVenue || !seatPlan || !pricePoints.length) {
-      toast('Please select a venue and set up pricing before saving');
-      return;
-    }
-
-    if (!name.trim()) {
-      toast('Please enter a scenario name');
+    if (!selectedTheater || !seatPlan || !pricePoints.length) {
+      toast.error('Please select a venue and set up pricing before saving');
       return;
     }
 
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/scenarios/${resolvedParams.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          description,
-          theaterId: selectedVenue,
-          seatmap: seatPlan,
-          pricing: pricePoints
-        }),
+      const { scenario, error } = await updateScenario(id, {
+        name,
+        description,
+        theaterId: selectedTheater.id,
+        seatmap: seatPlan,
+        pricing: pricePoints
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update scenario');
+      if (error || !scenario) {
+        throw new Error(error || 'Failed to update scenario');
       }
 
-      toast('Scenario updated successfully');
-      router.refresh(); // Refresh the page to ensure latest data
+      toast.success('Scenario updated successfully');
+      router.push('/productions');
     } catch (error) {
       console.error('Error updating scenario:', error);
-      toast('Failed to update scenario');
+      toast.error('Failed to update scenario');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleVenueChange = (value: string) => {
-    const newVenueId = Number(value);
-    if (newVenueId !== selectedVenue) {
-      setPendingVenueChange(newVenueId);
-      setShowVenueChangeDialog(true);
-    }
-  };
+  const handleVenueChange = async (value: string) => {
+    const theaterId = Number(value);
+    if (theaterId !== selectedTheater?.id) {
+      try {
+        const { seatPlan: newSeatPlan, error } = await getTheaterSeatPlan(theaterId);
+        if (error || !newSeatPlan) {
+          throw new Error(error || 'Failed to load seat plan');
+        }
 
-  const confirmVenueChange = () => {
-    if (pendingVenueChange) {
-      setSelectedVenue(pendingVenueChange);
-      setSeatPlan(null); // Reset seat plan to trigger reload
-      setPricePoints([]); // Reset pricing
+        const theater = theaters.find(t => t.id === theaterId);
+        if (theater) {
+          setSelectedTheater(theater);
+          setSeatPlan(newSeatPlan);
+          setPricePoints([]);
+          setSelectedPricePoint(null);
+        }
+      } catch (error) {
+        console.error('Error changing venue:', error);
+        toast.error('Failed to load seat plan');
+      }
     }
-    setShowVenueChangeDialog(false);
-    setPendingVenueChange(null);
   };
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`/api/scenarios/${resolvedParams.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete scenario');
+      const { error } = await deleteScenario(id);
+      if (error) {
+        throw new Error(error);
       }
 
-      toast('Scenario deleted');
+      toast.success('Scenario deleted');
       router.push(`/productions/${scenario?.productionId}`);
     } catch (error) {
       console.error('Error deleting scenario:', error);
-      toast('Failed to delete scenario');
+      toast.error('Failed to delete scenario');
     }
   };
 
@@ -250,7 +250,7 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
           <div className="scenario-venue space-y-2">
             <Label>Venue</Label>
             <Select 
-              value={selectedVenue?.toString()} 
+              value={selectedTheater?.id?.toString()} 
               onValueChange={handleVenueChange}
             >
               <SelectTrigger>
@@ -275,9 +275,9 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
 
       <div className="scenario-seatmap flex gap-4 w-full">
         <div className="flex-1">
-          {selectedVenue && (
+          {selectedTheater && (
             <SeatMapEditor 
-              theater={theaters.find(t => t.id === selectedVenue)!} 
+              theater={selectedTheater} 
               pricePoints={pricePoints}
               selectedPricePoint={selectedPricePoint}
               onSeatClick={handleSeatClick}
@@ -302,7 +302,7 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
             <Button variant="outline" onClick={() => setShowVenueChangeDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={confirmVenueChange}>
+            <Button onClick={() => setShowVenueChangeDialog(false)}>
               Confirm Change
             </Button>
           </DialogFooter>

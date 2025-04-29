@@ -12,6 +12,7 @@ import { PricingPicker, PricePoint } from "@/components/pricing-picker"
 import { toast } from "sonner"
 import { SeatPlan } from "@/types/seat-plan"
 import { SeatMapEditor } from "@/components/seat-map-editor"
+import { getTheaters, getTheaterSeatPlan, getProduction, createScenario } from "../../actions"
 
 type Theater = {
   id: number
@@ -41,53 +42,74 @@ function CreateScenarioContent() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    async function fetchData() {
+    async function loadData() {
       try {
-        // Fetch theaters
-        const theatersResponse = await fetch('/api/theaters');
-        if (!theatersResponse.ok) throw new Error('Failed to fetch theaters');
-        const theatersData = await theatersResponse.json();
-        setTheaters(theatersData);
-        setSelectedTheater(theatersData[0]);
+        const { theaters, error: theatersError } = await getTheaters();
+        if (theatersError || !theaters) {
+          throw new Error(theatersError || 'Failed to load theaters');
+        }
+        setTheaters(theaters);
 
-        // Fetch production
-        if (productionId) {
-          const productionResponse = await fetch(`/api/productions/${productionId}`);
-          if (!productionResponse.ok) throw new Error('Failed to fetch production');
-          const productionData = await productionResponse.json();
-          setProduction(productionData);
+        const { production, error: productionError } = await getProduction(Number(productionId));
+        if (productionError || !production) {
+          throw new Error(productionError || 'Production not found');
+        }
+        setProduction(production);
+
+        // If we have theaters, load the seat plan for the first theater
+        if (theaters.length > 0) {
+          const { seatPlan: initialSeatPlan, error: seatPlanError } = await getTheaterSeatPlan(theaters[0].id);
+          if (seatPlanError || !initialSeatPlan) {
+            throw new Error(seatPlanError || 'Failed to load seat plan');
+          }
+          setSelectedTheater(theaters[0]);
+          setSeatPlan(initialSeatPlan);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error loading data:', error);
         toast.error('Failed to load data');
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchData();
+    loadData();
   }, [productionId]);
 
-  useEffect(() => {
-    async function fetchSeatPlan() {
-      if (!selectedTheater) return;
-      
-      try {
-        const response = await fetch(`/api/theaters/${selectedTheater.id}/seatplan`);
-        if (!response.ok) throw new Error('Failed to fetch seat plan');
-        const data = await response.json();
-        setSeatPlan(data);
-      } catch (error) {
-        console.error('Error fetching seat plan:', error);
-        toast.error('Failed to load seat plan');
+  const handleVenueChange = async (value: string) => {
+    const theaterId = Number(value);
+    try {
+      console.log('Loading seat plan for theater:', theaterId);
+      const { seatPlan: newSeatPlan, error } = await getTheaterSeatPlan(theaterId);
+      if (error || !newSeatPlan) {
+        console.error('Failed to load seat plan:', error);
+        throw new Error(error || 'Failed to load seat plan');
       }
-    }
+      console.log('Loaded seat plan:', newSeatPlan);
 
-    fetchSeatPlan();
-  }, [selectedTheater]);
+      const theater = theaters.find(t => t.id === theaterId);
+      if (theater) {
+        setSelectedTheater(theater);
+        setSeatPlan(newSeatPlan);
+        setPricePoints([]);
+        setSelectedPricePoint(null);
+      } else {
+        console.error('Theater not found:', theaterId);
+        toast.error('Theater not found');
+      }
+    } catch (error) {
+      console.error('Error changing venue:', error);
+      toast.error('Failed to load seat plan');
+    }
+  };
 
   const handleSeatClick = (sectionId: number, rowId: number, seatId: number) => {
-    if (!selectedPricePoint || !seatPlan) return;
+    if (!selectedPricePoint || !seatPlan) {
+      console.log('Missing required data:', { selectedPricePoint, seatPlan });
+      return;
+    }
+    
+    console.log('Updating seat with price point:', selectedPricePoint);
     
     const updatedSeatPlan = {
       ...seatPlan,
@@ -101,7 +123,7 @@ function CreateScenarioContent() {
               ...row,
               seats: row.seats.map((seat) => {
                 if (seat.id !== seatId) return seat;
-                return {
+                const updatedSeat = {
                   ...seat,
                   price: selectedPricePoint.price,
                   status: selectedPricePoint.attributes.houseSeat ? 'house' : 
@@ -110,6 +132,8 @@ function CreateScenarioContent() {
                          selectedPricePoint.attributes.accessible ? 'accessible' : 
                          selectedPricePoint.attributes.restrictedView ? 'restricted' : 'available'
                 };
+                console.log('Updated seat:', updatedSeat);
+                return updatedSeat;
               })
             };
           })
@@ -120,7 +144,7 @@ function CreateScenarioContent() {
     setSeatPlan(updatedSeatPlan);
   };
 
-  const handleSaveScenario = async () => {
+  const handleSave = async () => {
     if (!selectedTheater || !seatPlan || !pricePoints.length) {
       toast.error('Please select a venue and set up pricing before saving');
       return;
@@ -131,38 +155,26 @@ function CreateScenarioContent() {
       return;
     }
 
-    if (!productionId) {
-      toast.error('Production ID is required');
-      return;
-    }
-
     setIsSaving(true);
     try {
-      const response = await fetch('/api/scenarios', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: scenarioName,
-          description: scenarioDescription,
-          productionId: Number(productionId),
-          theaterId: selectedTheater.id,
-          seatmap: seatPlan,
-          pricing: pricePoints
-        }),
+      const { scenario, error } = await createScenario({
+        name: scenarioName,
+        description: scenarioDescription,
+        productionId: Number(productionId),
+        theaterId: selectedTheater.id,
+        seatmap: seatPlan,
+        pricing: pricePoints
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to save scenario');
+      if (error || !scenario) {
+        throw new Error(error || 'Failed to create scenario');
       }
 
-      const savedScenario = await response.json();
-      toast.success('Scenario saved successfully');
-      router.push(`/scenarios/${savedScenario.id}`);
+      toast.success('Scenario created successfully');
+      router.push('/productions');
     } catch (error) {
-      console.error('Error saving scenario:', error);
-      toast.error('Failed to save scenario');
+      console.error('Error creating scenario:', error);
+      toast.error('Failed to create scenario');
     } finally {
       setIsSaving(false);
     }
@@ -185,7 +197,7 @@ function CreateScenarioContent() {
         </div>
         <div className="flex justify-end">
         <Button 
-          onClick={handleSaveScenario} 
+          onClick={handleSave} 
           disabled={isSaving || !scenarioName.trim()}
         >
           {isSaving ? 'Saving...' : 'Create Scenario'}
@@ -216,10 +228,7 @@ function CreateScenarioContent() {
           <Label>Venue</Label>
           <Select 
             value={selectedTheater?.id.toString()} 
-            onValueChange={(value) => {
-              const theater = theaters.find(t => t.id === Number(value));
-              if (theater) setSelectedTheater(theater);
-            }}
+            onValueChange={handleVenueChange}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select a venue" />

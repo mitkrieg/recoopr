@@ -24,14 +24,10 @@ export function SeatMap({
     const [hoveredSeat, setHoveredSeat] = useState<{sectionId: number, rowId: number, seatId: number} | null>(null);
 
     useEffect(() => {
-        if (!initialSeatPlan) {
-            fetch(`/api/theaters/${theater.id}/seatplan`)
-                .then(res => res.json())
-                .then(data => setSeatPlan(normalizeSeatPositions(data)));
-        } else {
+        if (initialSeatPlan) {
             setSeatPlan(initialSeatPlan);
         }
-    }, [theater, initialSeatPlan]);
+    }, [initialSeatPlan]);
 
     const handleMouseDown = (sectionId: number, rowId: number, seatId: number) => {
         if (!selectedPricePoint) return;
@@ -61,7 +57,7 @@ export function SeatMap({
             const currentSeat = currentRow.seats.find(s => s.id === seatId);
             const lastSeatObj = lastRow.seats.find(s => s.id === lastSeat.seatId);
             
-            if (!currentSeat || !lastSeatObj) return;
+            if (!currentSeat || !lastSeatObj || !currentSeat.x || !currentSeat.y || !lastSeatObj.x || !lastSeatObj.y) return;
             
             // Calculate the range of seats to update
             const startX = Math.min(currentSeat.x, lastSeatObj.x);
@@ -73,7 +69,7 @@ export function SeatMap({
             seatPlan?.sections.forEach(section => {
                 section.rows.forEach(row => {
                     row.seats.forEach(seat => {
-                        if (seat.x >= startX && seat.x <= endX && seat.y >= startY && seat.y <= endY) {
+                        if (seat.x && seat.y && seat.x >= startX && seat.x <= endX && seat.y >= startY && seat.y <= endY) {
                             onSeatClick(section.id, row.id, seat.id);
                         }
                     });
@@ -142,7 +138,7 @@ export function SeatMap({
                                 //     row.seats.map(seat => seat.x)
                                 // )) + 10;
                                 const sectionMaxY = Math.max(...section.rows.flatMap(row => 
-                                    row.seats.map(seat => seat.y)
+                                    row.seats.map(seat => seat.y || 0)
                                 )) + 10;
 
                                 return (
@@ -156,8 +152,8 @@ export function SeatMap({
                                                             key={seat.id}
                                                             className={`absolute w-8 h-8 flex items-center justify-center text-xs rounded group seat cursor-pointer`}
                                                             style={{
-                                                                left: seat.x,
-                                                                top: seat.y,
+                                                                left: seat.x || 0,
+                                                                top: seat.y || 0,
                                                                 transform: 'translate(-50%, -50%)'
                                                             }}
                                                             onClick={() => onSeatClick(section.id, row.id, seat.id)}

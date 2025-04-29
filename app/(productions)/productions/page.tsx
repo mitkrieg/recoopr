@@ -6,6 +6,12 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { deleteProduction } from '../actions';
+import { toast } from 'sonner';
+import { revalidatePath } from 'next/cache';
+import { DeleteProductionButton } from './delete-button';
 
 export default async function ProductionsPage() {
   const session = await getSession();
@@ -36,12 +42,11 @@ export default async function ProductionsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {userProductions.map((production) => (
-            <Link 
-              key={production.id} 
-              href={`/productions/${production.id}`}
-              className="block"
-            >
-              <Card className="h-full hover:shadow-md transition-shadow">
+            <Card key={production.id} className="h-full hover:shadow-md transition-shadow relative">
+              <div className="absolute top-2 right-2">
+                <DeleteProductionButton productionId={production.id} />
+              </div>
+              <Link href={`/productions/${production.id}`} className="block">
                 <CardHeader>
                   <CardTitle>{production.name}</CardTitle>
                   <CardDescription>
@@ -56,8 +61,8 @@ export default async function ProductionsPage() {
                     {production.capitalization ? `Capitalization: $${production.capitalization.toLocaleString()}` : 'No capitalization set'}
                   </p>
                 </CardContent>
-              </Card>
-            </Link>
+              </Link>
+            </Card>
           ))}
         </div>
       )}

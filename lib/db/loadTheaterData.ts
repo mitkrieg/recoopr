@@ -6,7 +6,8 @@ import { v5 as uuidv5 } from 'uuid';
 import { eq, and } from 'drizzle-orm';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import * as schema from './schema';
-
+import { db } from './drizzle';
+import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 interface VenueSection {
   label: string;
   subChart?: {
@@ -63,7 +64,7 @@ function cleanTheaterName(name: string): string {
   return cleaned;
 }
 
-async function loadTheaterData(db: NeonDatabase<typeof schema>) {
+async function loadTheaterData(db: NeonDatabase<typeof schema> | PostgresJsDatabase<typeof schema>) {
   try {
     // First, clear existing data
     console.log('Clearing existing data...');
@@ -235,3 +236,11 @@ async function loadTheaterData(db: NeonDatabase<typeof schema>) {
 }
 
 export { loadTheaterData };
+
+// Run the loader
+loadTheaterData(db)
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error('Failed to load theater data:', error);
+    process.exit(1);
+  }); 
