@@ -39,8 +39,8 @@ const FormSchema = z.object({
     from: z.date(),
     to: z.date(),
   }),
-  venue: z.string().min(2, {
-    message: "Venue must be at least 2 characters.",
+  venue: z.number().min(1, {
+    message: "Please select a venue.",
   }),
   capitalization: z.object({
     capitalization: z.number().min(0).max(1000000000)
@@ -146,7 +146,7 @@ function InputForm() {
         from: new Date(),
         to: new Date(),
       },
-      venue: "",
+      venue: 0,
       capitalization: {
         capitalization: 100,
       },
@@ -505,7 +505,10 @@ function InputForm() {
             <FormItem>
               <FormLabel>Venue</FormLabel>
               <FormControl>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select 
+                  onValueChange={(value) => field.onChange(Number(value))} 
+                  value={field.value?.toString()}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a venue" />
                   </SelectTrigger>
