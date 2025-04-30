@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { SeatMapEditor } from "@/components/seat-map-editor"
-import { getTheaters, getTheaterSeatPlan, getScenario, updateScenario, deleteScenario } from "../../actions"
+import { getTheaters, getTheaterSeatPlan, getScenario, updateScenario, deleteScenario, getProduction } from "../../actions"
 
 type Theater = {
   id: number;
@@ -45,6 +45,12 @@ type Scenario = {
   pricing: any[];
 };
 
+type Production = {
+  id: number;
+  name: string;
+  startDate: string;
+  endDate: string | null;
+};
 export default function ScenarioPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const resolvedParams = use(params);
@@ -60,9 +66,10 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
   const [description, setDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showVenueChangeDialog, setShowVenueChangeDialog] = useState(false);
-  const [pendingVenueChange, setPendingVenueChange] = useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [production, setProduction] = useState<Production | null>(null);
+
 
   useEffect(() => {
     async function loadData() {
@@ -86,6 +93,11 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
         }
         setSeatPlan(scenario.seatmap);
         setPricePoints(scenario.pricing);
+        const { production, error: productionError } = await getProduction(scenario.productionId);
+        if (productionError || !production) {
+          throw new Error(productionError || 'Production not found');
+        }
+        setProduction(production);
       } catch (error) {
         console.error('Error loading data:', error);
         toast.error('Failed to load scenario data');
@@ -212,7 +224,7 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">{name}</h1>
-          {/* <p className="text-gray-500">For {production.name}</p> */}
+          {production && <p className="text-gray-500">For {production.name}</p>}
         </div>
         <div className="actionButtons flex gap-2">
           <Button variant="outline" onClick={() => router.push(`/productions/${scenario.productionId}`)}>

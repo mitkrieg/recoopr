@@ -52,7 +52,7 @@ export function NavMain({
               <SidebarMenuButton asChild tooltip={item.title}>
                 <Link href={item.url}>
                   {item.icon && <item.icon />}
-                  <span>{item.title}</span>
+                  <span className={item.url === "#" ? "text-gray-400" : ""}>{item.title}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

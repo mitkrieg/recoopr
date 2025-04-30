@@ -1,5 +1,5 @@
 import { db } from '@/lib/db/drizzle';
-import { productions, scenarios } from '@/lib/db/schema';
+import { productions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 

@@ -4,12 +4,10 @@ import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SeatMapEditor } from "@/components/seat-map-editor";
 import { getTheaters, getTheaterSeatPlan } from "../actions";
-import { toast } from "sonner";
 import { SeatPlan } from "@/types/seat-plan";
 import { PricePoint } from "@/components/pricing-picker";
 import { Header } from "@/components/Header";
 import { IconTicket } from "@tabler/icons-react";
-import Link from "next/link";
 
 type Theater = {
   id: number;

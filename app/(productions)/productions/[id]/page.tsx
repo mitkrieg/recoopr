@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { toast } from "sonner"
 import { format, isValid } from "date-fns"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { formatCurrency } from "@/components/price-chart"
-import { getProduction, getScenarios, deleteScenario, getTheater, deleteProduction } from "../../actions"
+import { getProduction, getScenarios, getTheater, deleteProduction } from "../../actions"
+import { IconTrash, IconPencil } from "@tabler/icons-react"
 
 type Production = {
   id: number;
@@ -92,21 +93,6 @@ export default function ProductionPage({ params }: { params: Promise<{ id: strin
     router.push(`/scenarios/create?productionId=${id}`);
   };
 
-  const handleDeleteScenario = async (scenarioToDelete: Scenario) => {
-    try {
-      const { error } = await deleteScenario(scenarioToDelete.id);
-      if (error) {
-        throw new Error(error);
-      }
-
-      setScenarios(scenarios.filter(s => s.id !== scenarioToDelete.id));
-      toast.success('Scenario deleted successfully');
-    } catch (error) {
-      console.error('Error deleting scenario:', error);
-      toast.error('Failed to delete scenario');
-    }
-  };
-
   const handleDeleteClick = () => {
     setShowDeleteDialog(true);
   };
@@ -142,7 +128,7 @@ export default function ProductionPage({ params }: { params: Promise<{ id: strin
         <div>
           <h1 className="text-2xl font-bold">{production.name}</h1>
           <p className="text-gray-500">
-            Captiolization {formatCurrency(Number(production.capitalization))}
+            Capitalization {formatCurrency(Number(production.capitalization))}
           </p>
           <p className="text-gray-500">
             {formatDate(production.startDate)} - {formatDate(production.endDate || '')}
@@ -194,7 +180,13 @@ export default function ProductionPage({ params }: { params: Promise<{ id: strin
                   >
                     {formatDate(scenario.updatedAt.toISOString())}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="flex flex-row gap-2">
+                    <Button size="sm" onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/scenarios/${scenario.id}`);
+                    }}>
+                      <IconPencil />
+                    </Button>
                     <Button
                       variant="destructive"
                       size="sm"
@@ -204,7 +196,7 @@ export default function ProductionPage({ params }: { params: Promise<{ id: strin
                         setShowDeleteDialog(true);
                       }}
                     >
-                      Delete
+                      <IconTrash />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -214,8 +206,8 @@ export default function ProductionPage({ params }: { params: Promise<{ id: strin
         </Table>
       </div>
 
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">{production?.name}</h1>
+      <div className="flex justify-between flex-row-reverse items-center mb-6">
+        {/* <h1 className="text-3xl font-bold">{production?.name}</h1> */}
         <Button variant="destructive" onClick={handleDeleteClick}>
           Delete Production
         </Button>

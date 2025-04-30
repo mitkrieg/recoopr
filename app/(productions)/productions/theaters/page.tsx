@@ -3,11 +3,9 @@
 import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SeatMapEditor } from "@/components/seat-map-editor";
-import { PricingPicker, PricePoint } from "@/components/pricing-picker";
+import { PricePoint } from "@/components/pricing-picker";
 import { SeatPlan } from "@/types/seat-plan";
 import { getTheaters, getTheaterSeatPlan } from "../../actions"
-import { toast } from "sonner";
-import { SeatMap } from "@/components/seat-map";
 
 type Theater = {
     id: number;

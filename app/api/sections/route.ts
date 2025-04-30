@@ -1,7 +1,7 @@
 import { db } from '@/lib/db/drizzle';
 import { theaterSections } from '@/lib/db/schema';
 import { NextResponse } from 'next/server';
-import { eq, asc } from 'drizzle-orm';
+import { asc } from 'drizzle-orm';
 
 // get all sections
 export async function GET() {

@@ -2,7 +2,7 @@
 
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { deleteProduction } from '../actions';
+import { deleteProduction } from '../app/(productions)/actions';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';

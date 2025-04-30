@@ -6,12 +6,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { deleteProduction } from '../actions';
-import { toast } from 'sonner';
-import { revalidatePath } from 'next/cache';
-import { DeleteProductionButton } from './delete-button';
+import { DeleteProductionButton } from '../../../components/delete-button';
 
 export default async function ProductionsPage() {
   const session = await getSession();

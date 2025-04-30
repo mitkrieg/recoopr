@@ -30,7 +30,7 @@ export function NavSecondary({
               <SidebarMenuButton asChild>
                 <a href={item.url}>
                   <item.icon />
-                  <span>{item.title}</span>
+                  <span className={item.url === "#" ? "text-gray-400" : ""}>{item.title}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>

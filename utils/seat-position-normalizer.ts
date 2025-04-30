@@ -1,4 +1,4 @@
-import { SeatPlan, Section, Row, Seat } from "@/types/seat-plan";
+import { SeatPlan, Section} from "@/types/seat-plan";
 
 export function normalizeSeatPositions(seatPlan: SeatPlan): SeatPlan {
     // Group sections by parentSection

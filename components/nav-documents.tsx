@@ -45,7 +45,7 @@ export function NavDocuments({
             <SidebarMenuButton asChild>
               <a href={item.url}>
                 <item.icon />
-                <span>{item.name}</span>
+                <span className={item.url === "#" ? "text-gray-400" : ""}>{item.name}</span>
               </a>
             </SidebarMenuButton>
             <DropdownMenu>

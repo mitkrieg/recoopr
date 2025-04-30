@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ArrowRight, CreditCard, Database } from 'lucide-react';
-import { Terminal } from './terminal';
 import Link from 'next/link';
+import { IconTicket } from '@tabler/icons-react';
 
 export default function HomePage() {
   return (
@@ -9,7 +9,21 @@ export default function HomePage() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:grid lg:grid-cols-12 lg:gap-8">
-            <div className="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
+            <div className="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">              
+              <h1 className="text-6xl font-bold leading-tight text-gray-900">ReCoopr</h1>
+              <div className="flex flex-row justify-center">
+                <IconTicket className="h-15 w-15 text-orange-500 mr-2" />
+                <IconTicket className="h-15 w-15 text-orange-500 mr-2" />
+                <IconTicket className="h-15 w-15 text-orange-500 mr-2" />
+                <IconTicket className="h-15 w-15 text-orange-500 mr-2" />
+                <IconTicket className="h-15 w-15 text-orange-500 mr-2" />
+                <IconTicket className="h-15 w-15 text-orange-500 mr-2" />
+                <IconTicket className="h-15 w-15 text-orange-500 mr-2" />
+                <IconTicket className="h-15 w-15 text-orange-500 mr-2" />
+                <IconTicket className="h-15 w-15 text-orange-500 mr-2" />
+              </div>
+              
+              
               <h1 className="text-4xl font-bold text-gray-900 tracking-tight sm:text-5xl md:text-6xl">
                 Get to Recoupment
                 <span className="block text-orange-500">Faster Than Ever</span>
@@ -21,7 +35,6 @@ export default function HomePage() {
               <div className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
                 <a
                   href="/theaters"
-                  // target="_blank"
                 >
                   <Button
                     size="lg"
@@ -35,8 +48,9 @@ export default function HomePage() {
               </div>
             </div>
             <div className="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
-              <Terminal />
+              <img src="/assets/theater-seats.jpg" alt="ReCoopr" className="w-full h-full rounded-3xl shadow-2xl object-cover" />
             </div>
+            
           </div>
         </div>
       </section>

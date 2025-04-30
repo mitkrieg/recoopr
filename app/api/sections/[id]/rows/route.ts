@@ -1,7 +1,7 @@
 import { db } from '@/lib/db/drizzle';
-import { theaterRows, theaterSections } from '@/lib/db/schema';
+import { theaterRows } from '@/lib/db/schema';
 import { NextRequest, NextResponse } from 'next/server';
-import { eq, asc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 // get all rows for a section by id
 export async function GET(

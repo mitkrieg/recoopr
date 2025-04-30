@@ -4,18 +4,12 @@ import * as React from "react"
 import {
   IconCamera,
   IconChartBar,
-  IconDashboard,
-  IconDatabase,
   IconFileAi,
   IconFileDescription,
   IconFileWord,
-  IconFolder,
   IconHelp,
   IconTheater,
-  IconListDetails,
   IconReport,
-  IconSearch,
-  IconSettings,
   IconUsers,
   IconFileSpreadsheet,
   IconMasksTheater,
@@ -36,7 +30,6 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import Link from "next/link"
-import { CircleIcon, Drama } from 'lucide-react';
 import useSWR from "swr"
 import { redirect } from "next/navigation"
 

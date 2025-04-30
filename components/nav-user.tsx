@@ -96,7 +96,7 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/general')}>
                 <IconUserCircle />
                 Account
               </DropdownMenuItem>
@@ -108,7 +108,7 @@ export function NavUser({
                 <IconCreditCard />
                 Billing
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="text-gray-400">
                 <IconNotification />
                 Notifications
               </DropdownMenuItem>
