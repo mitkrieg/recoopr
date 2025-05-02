@@ -12,7 +12,7 @@ import { toast } from "sonner"
 import { SeatPlan } from "@/types/seat-plan"
 import { SeatMapEditor } from "@/components/seat-map-editor"
 import { getTheaters, getTheaterSeatPlan, getProduction, createScenario } from "../../actions"
-
+import { PriceChart } from "@/components/price-chart"
 type Theater = {
   id: number
   name: string
@@ -203,8 +203,8 @@ function CreateScenarioContent() {
         </Button>
       </div>
       </div>
-
-      <div className="space-y-4 p-4 border rounded-lg">
+      <div className="flex gap-4 w-full justify-between">
+      <div className="space-y-4 w-1/2 p-4 border rounded-lg">
         <div className="space-y-2">
           <Label htmlFor="scenario-name">Scenario Name</Label>
           <Input
@@ -241,7 +241,14 @@ function CreateScenarioContent() {
             </SelectContent>
           </Select>
         </div>
+
+        
       </div>
+      <div className="w-90 h-full">
+            {seatPlan && <PriceChart data={seatPlan} pricePoints={pricePoints} />}
+        </div>  
+      </div>
+      
 
       <div className="flex gap-4 w-full">
         <div className="flex-1">

@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Users, CircleUser, Shield, Activity, Menu } from 'lucide-react';
+import Header from '@/components/Header';
+import { IconTicket } from '@tabler/icons-react';
 
 export default function DashboardLayout({
   children
@@ -48,7 +50,14 @@ export default function DashboardLayout({
             isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
-          <nav className="h-full overflow-y-auto p-4">
+          <div className="flex flex-row items-center justify-between pt-8">
+            <a href="/" className="flex flex-row items-center p-3">
+              <IconTicket className="h-6 w-6 text-orange-500 mr-2" />
+              <h1 className="text-3xl font-bold leading-tight text-gray-900">ReCoopr</h1>
+            </a>
+            {/* <Header /> */}
+          </div>  
+          <nav className="h-full overflow-y-auto">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href} passHref>
                 <Button

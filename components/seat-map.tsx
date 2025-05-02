@@ -162,7 +162,7 @@ export function SeatMap({
                                                             onMouseLeave={handleMouseLeave}
                                                         >
                                                             <Squircle 
-                                                                className="size-4 seat-icon" 
+                                                                className="size-4 seat-icon shadow-2xl" 
                                                                 style={{ 
                                                                     color: pricePoint?.color || 'currentColor',
                                                                     fill: pricePoint?.color || 'none'

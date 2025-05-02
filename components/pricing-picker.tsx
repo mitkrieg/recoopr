@@ -9,10 +9,27 @@ import { SeatAttributesPicker } from '@/components/ui/seat-attributes-picker';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { SeatPlan, Section, Row, Seat } from '@/types/seat-plan';
 
+// Predefined set of accessible colors that work well together
+const DEFAULT_COLORS = [
+  '#3b82f6', // Blue
+  '#10b981', // Green
+  '#f59e0b', // Amber
+  '#ef4444', // Red
+  '#8b5cf6', // Violet
+  '#ec4899', // Pink
+  '#14b8a6', // Teal
+  '#f97316', // Orange
+  '#6366f1', // Indigo
+  '#06b6d4', // Cyan
+] as const;
+
+type Color = typeof DEFAULT_COLORS[number];
+const DEFAULT_COLOR: Color = DEFAULT_COLORS[0];
+
 export type PricePoint = {
   id: string;
   price: number;
-  color: string;
+  color: Color;
   attributes: {
     houseSeat: boolean;
     emergency: boolean;
@@ -40,7 +57,7 @@ export function PricingPicker({
   seatPlan
 }: PricingPickerProps) {
   const [newPrice, setNewPrice] = useState('');
-  const [newColor, setNewColor] = useState('#3b83f6');
+  const [newColor, setNewColor] = useState<Color>(DEFAULT_COLOR);
   const [newAttributes, setNewAttributes] = useState({
     houseSeat: false,
     emergency: false,
@@ -50,7 +67,7 @@ export function PricingPicker({
   });
   const [editingPoint, setEditingPoint] = useState<PricePoint | null>(null);
   const [editPrice, setEditPrice] = useState('');
-  const [editColor, setEditColor] = useState('#3b83f6');
+  const [editColor, setEditColor] = useState<Color>(DEFAULT_COLOR);
   const [editAttributes, setEditAttributes] = useState({
     houseSeat: false,
     emergency: false,
@@ -58,6 +75,12 @@ export function PricingPicker({
     accessible: false,
     restrictedView: false,
   });
+
+  // Get the next available color that isn't already in use
+  const getNextAvailableColor = (): Color => {
+    const usedColors = new Set(pricePoints.map(p => p.color));
+    return DEFAULT_COLORS.find(color => !usedColors.has(color)) || DEFAULT_COLOR;
+  };
 
   const handleAddPricePoint = () => {
     if (!newPrice) return;
@@ -70,8 +93,9 @@ export function PricingPicker({
     };
 
     onChange([...pricePoints, newPricePoint]);
+    onSelectPricePoint(newPricePoint);
     setNewPrice('');
-    setNewColor('#3b83f6');
+    setNewColor(getNextAvailableColor());
     setNewAttributes({
       houseSeat: false,
       emergency: false,
@@ -152,7 +176,7 @@ export function PricingPicker({
             <div className="flex items-center justify-center h-9">
               <SeatAttributesPicker
                 color={newColor}
-                onColorChange={setNewColor}
+                onColorChange={(color: string) => setNewColor(color as Color)}
                 attributes={newAttributes}
                 onAttributesChange={setNewAttributes}
               />
@@ -195,7 +219,7 @@ export function PricingPicker({
                           />
                           <SeatAttributesPicker
                             color={editColor}
-                            onColorChange={setEditColor}
+                            onColorChange={(color: string) => setEditColor(color as Color)}
                             attributes={editAttributes}
                             onAttributesChange={setEditAttributes}
                           />
