@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import { format, isValid } from "date-fns"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { formatCurrency } from "@/components/price-chart"
-import { getProduction, getScenarios, getTheater, deleteProduction } from "../../actions"
+import { getProduction, getScenarios, getTheater, deleteProduction, deleteScenario } from "../../actions"
 import { IconTrash, IconPencil } from "@tabler/icons-react"
 
 type Production = {
@@ -99,18 +99,34 @@ export default function ProductionPage({ params }: { params: Promise<{ id: strin
 
   const handleDelete = async () => {
     try {
-      const result = await deleteProduction(id);
-      if (result.error) {
-        toast.error(result.error);
-        return;
+      if (scenarioToDelete) {
+        const result = await deleteScenario(scenarioToDelete.id);
+        if (result.error) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success('Scenario deleted successfully');
+        // Refresh the scenarios list
+        const { scenarios: updatedScenarios, error: scenariosError } = await getScenarios(id);
+        if (scenariosError || !updatedScenarios) {
+          throw new Error(scenariosError || 'Failed to load scenarios');
+        }
+        setScenarios(updatedScenarios);
+      } else {
+        const result = await deleteProduction(id);
+        if (result.error) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success('Production deleted successfully');
+        router.push('/productions');
       }
-      toast.success('Production deleted successfully');
-      router.push('/productions');
     } catch (error) {
-      console.error('Error deleting production:', error);
-      toast.error('Failed to delete production');
+      console.error('Error deleting:', error);
+      toast.error('Failed to delete');
     } finally {
       setShowDeleteDialog(false);
+      setScenarioToDelete(null);
     }
   };
 
@@ -216,13 +232,18 @@ export default function ProductionPage({ params }: { params: Promise<{ id: strin
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Production</DialogTitle>
+            <DialogTitle>{scenarioToDelete ? 'Delete Scenario' : 'Delete Production'}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this production? This action cannot be undone.
+              {scenarioToDelete 
+                ? 'Are you sure you want to delete this scenario? This action cannot be undone.'
+                : 'Are you sure you want to delete this production? This action cannot be undone.'}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-4 mt-4">
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+            <Button variant="outline" onClick={() => {
+              setShowDeleteDialog(false);
+              setScenarioToDelete(null);
+            }}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDelete}>

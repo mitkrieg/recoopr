@@ -170,7 +170,7 @@ function CreateScenarioContent() {
       }
 
       toast.success('Scenario created successfully');
-      router.push('/productions');
+      router.push(`/scenarios/${scenario.id}`);
     } catch (error) {
       console.error('Error creating scenario:', error);
       toast.error('Failed to create scenario');

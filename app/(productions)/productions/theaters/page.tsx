@@ -76,8 +76,37 @@ export default function ProductionsPage() {
 
     const handleSeatClick = (sectionId: number, rowId: number, seatId: number) => {
         if (!selectedPricePoint || !seatPlan) return;
-        // Add your seat click logic here
-    };
+        
+        const updatedSeatPlan = {
+          ...seatPlan,
+          sections: seatPlan.sections.map((section) => {
+            if (section.id !== sectionId) return section;
+            return {
+              ...section,
+              rows: section.rows.map((row) => {
+                if (row.id !== rowId) return row;
+                return {
+                  ...row,
+                  seats: row.seats.map((seat) => {
+                    if (seat.id !== seatId) return seat;
+                    return {
+                      ...seat,
+                      price: selectedPricePoint.price,
+                      status: selectedPricePoint.attributes.houseSeat ? 'house' : 
+                             selectedPricePoint.attributes.emergency ? 'emergency' : 
+                             selectedPricePoint.attributes.premium ? 'premium' : 
+                             selectedPricePoint.attributes.accessible ? 'accessible' : 
+                             selectedPricePoint.attributes.restrictedView ? 'restricted' : 'available'
+                    };
+                  })
+                };
+              })
+            };
+          })
+        };
+    
+        setSeatPlan(updatedSeatPlan);
+      };
 
     if (isLoading) {
         return <div className="flex items-center justify-center min-h-screen">Loading...</div>;

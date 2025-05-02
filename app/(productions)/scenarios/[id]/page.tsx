@@ -164,7 +164,7 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
       }
 
       toast.success('Scenario updated successfully');
-      router.push('/productions');
+      // router.push(`/scenarios/${scenario.id}`);
     } catch (error) {
       console.error('Error updating scenario:', error);
       toast.error('Failed to update scenario');
