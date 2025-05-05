@@ -13,6 +13,7 @@ import { SeatPlan } from "@/types/seat-plan"
 import { SeatMapEditor } from "@/components/seat-map-editor"
 import { getTheaters, getTheaterSeatPlan, getProduction, createScenario } from "../../actions"
 import { PriceChart } from "@/components/price-chart"
+import { Card } from "@/components/ui/card"
 type Theater = {
   id: number
   name: string
@@ -205,7 +206,7 @@ function CreateScenarioContent() {
       </div>
       </div>
       <div className="flex gap-4 w-full justify-between">
-      <div className="space-y-4 w-1/2 p-4 border rounded-lg">
+      <Card  className="space-y-4 w-1/2 p-4">
         <div className="space-y-2">
           <Label htmlFor="scenario-name">Scenario Name</Label>
           <Input
@@ -244,7 +245,7 @@ function CreateScenarioContent() {
         </div>
 
         
-      </div>
+      </Card  >
       <div className="w-90 h-full">
             {seatPlan && <PriceChart data={seatPlan} pricePoints={pricePoints} />}
         </div>  

@@ -23,7 +23,7 @@ import {
 import { SeatMapEditor } from "@/components/seat-map-editor"
 import { getTheaters, getTheaterSeatPlan, getScenario, updateScenario, deleteScenario, getProduction } from "../../actions"
 import { Production } from "@/types/production"
-
+import { Card } from "@/components/ui/card"
 type Scenario = {
   id: number;
   name: string;
@@ -296,7 +296,7 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
       </div>
 
       <div className="scenario-info-container flex flex-row justify-between gap-4">
-        <div className="scenario-details flex flex-col space-y-4">
+        <Card className="scenario-details flex flex-col w-1/2 p-6">
           <div className="scenario-name space-y-2 w-80">
             <Label htmlFor="scenario-name">Scenario Name</Label>
             <Input
@@ -333,7 +333,7 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
               </SelectContent>
             </Select>
           </div>
-        </div>
+        </Card>
         <div className="scenario-stats w-90 h-full">
           {seatPlan && <PriceChart data={seatPlan} pricePoints={pricePoints} />}
         </div>

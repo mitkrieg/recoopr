@@ -83,11 +83,11 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: hsl(0 0% 95%);
     --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
+    --card: hsl(0 0% 100%);
     --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
+    --popover: hsl(0 0% 100%);
     --popover-foreground: 222.2 84% 4.9%;
     --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
@@ -108,7 +108,7 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: hsl(0 0% 90%);
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
     --sidebar-primary-foreground: 0 0% 98%;
@@ -168,7 +168,7 @@
 */
 
 :root {
-  --background: hsl(0 0% 100%);
+  --background: hsla(0, 0%, 100%, 0);
   --foreground: hsl(240 10% 3.9%);
   --card: hsl(0 0% 100%);
   --card-foreground: hsl(240 10% 3.9%);

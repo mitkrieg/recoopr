@@ -29,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { SeatMapEditor } from "@/components/seat-map-editor"
 import { Theater } from "@/types/theater"
 import { PriceChart } from "@/components/price-chart"
+import { Card } from "@/components/ui/card"
 
 const FormSchema = z.object({
   name: z.string().min(2, {
@@ -473,97 +474,100 @@ function InputForm() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Production Name</FormLabel>
-              <FormControl>
-                <Input placeholder="West Side Story" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="performanceDates"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Performance Dates</FormLabel>
-              <FormControl>
-                <DatePickerWithRange
-                  className="w-full"
-                  initialDates={field.value}
-                  onDateChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="venue"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Venue</FormLabel>
-              <FormControl>
-                <Select 
-                  onValueChange={(value) => field.onChange(Number(value))} 
-                  value={field.value?.toString()}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a venue" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isLoading ? (
-                      <SelectItem value="loading" disabled>Loading theaters...</SelectItem>
-                    ) : theaters.length === 0 ? (
-                      <SelectItem value="none" disabled>No theaters available</SelectItem>
-                    ) : (
-                      theaters.map((theater) => (
-                        <SelectItem key={theater.id} value={theater.id.toString()}>
-                          {theater.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="capitalization"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Capitalization</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <span className="absolute left-3 top-1 text-gray-500">$</span>
-                  <Input 
-                    type="number" 
-                    value={field.value.capitalization || ''}
-                    onChange={(e) => field.onChange({ capitalization: Number(e.target.value) || 0 })}
-                    className="pl-7 placeholder:text-gray-400"
-                    placeholder="100"
+    <Card className="w-2/3 space-y-6 p-6">
+        <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Production Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="West Side Story" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="performanceDates"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Performance Dates</FormLabel>
+                <FormControl>
+                  <DatePickerWithRange
+                    className="w-full"
+                    initialDates={field.value}
+                    onDateChange={field.onChange}
                   />
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem> 
-          )}
-        />
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Creating..." : "Submit"}
-        </Button>
-      </form>
-    </Form>
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="venue"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Venue</FormLabel>
+                <FormControl>
+                  <Select 
+                    onValueChange={(value) => field.onChange(Number(value))} 
+                    value={field.value?.toString()}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a venue" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isLoading ? (
+                        <SelectItem value="loading" disabled>Loading theaters...</SelectItem>
+                      ) : theaters.length === 0 ? (
+                        <SelectItem value="none" disabled>No theaters available</SelectItem>
+                      ) : (
+                        theaters.map((theater) => (
+                          <SelectItem key={theater.id} value={theater.id.toString()}>
+                            {theater.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="capitalization"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Capitalization</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1 text-gray-500">$</span>
+                    <Input 
+                      type="number" 
+                      value={field.value.capitalization || ''}
+                      onChange={(e) => field.onChange({ capitalization: Number(e.target.value) || 0 })}
+                      className="pl-7 placeholder:text-gray-400"
+                      placeholder="100"
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem> 
+            )}
+          />
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Creating..." : "Submit"}
+          </Button>
+        </form>
+      </Form>
+    </Card>
+    
   )
 }
 
