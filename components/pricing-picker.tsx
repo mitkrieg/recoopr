@@ -87,6 +87,18 @@ export function PricingPicker({
     return DEFAULT_COLORS.find(color => !usedColors.has(color)) || DEFAULT_COLOR;
   };
 
+  // Helper function to check if two price points are identical
+  const isPricePointIdentical = (point1: PricePoint, point2: PricePoint): boolean => {
+    return (
+      point1.price === point2.price &&
+      point1.attributes.houseSeat === point2.attributes.houseSeat &&
+      point1.attributes.emergency === point2.attributes.emergency &&
+      point1.attributes.premium === point2.attributes.premium &&
+      point1.attributes.accessible === point2.attributes.accessible &&
+      point1.attributes.restrictedView === point2.attributes.restrictedView
+    );
+  };
+
   const handleAddPricePoint = () => {
     if (!newPrice) return;
     
@@ -107,15 +119,11 @@ export function PricingPicker({
       return;
     }
 
-    // Check for duplicate price/attribute combinations against both current and props pricePoints
-    const allPricePoints = [...pricePoints];
-    const isDuplicate = allPricePoints.some(point => 
-      point.price === newPricePoint.price && 
-      JSON.stringify(point.attributes) === JSON.stringify(newPricePoint.attributes)
-    );
+    // Check for duplicate price/attribute combinations
+    const isDuplicate = pricePoints.some(point => isPricePointIdentical(point, newPricePoint));
 
     if (isDuplicate) {
-      toast.error('Price point already exists');
+      toast.error('A price point with the same price and attributes already exists');
       return;
     }
 
