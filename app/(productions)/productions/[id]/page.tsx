@@ -155,7 +155,7 @@ export default function ProductionPage({ params }: { params: Promise<{ id: strin
         </Button>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="border rounded-lg bg-white">
         <Table>
           <TableHeader>
             <TableRow>

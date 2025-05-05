@@ -404,50 +404,50 @@ function InputForm() {
           <p>{new Date(createdProduction.startDate).toLocaleDateString()} - {createdProduction.endDate ? new Date(createdProduction.endDate).toLocaleDateString() : 'No end date'}</p>
         </div>
         <div className="flex gap-4 w-full justify-between">
-            <div className="space-y-4 w-1/2">
-            <div className="space-y-2">
-              <Label htmlFor="scenario-name">Scenario Name</Label>
-              <Input
-                id="scenario-name"
-                value={scenarioName}
-                onChange={(e) => setScenarioName(e.target.value)}
-                placeholder="Enter scenario name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="scenario-description">Description</Label>
-              <Textarea
-                id="scenario-description"
-                value={scenarioDescription}
-                onChange={(e) => setScenarioDescription(e.target.value)}
-                placeholder="Enter scenario description"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Venue</Label>
-              <Select 
-                value={selectedVenue?.toString()} 
-                onValueChange={(value) => setSelectedVenue(Number(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a venue" />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoading ? (
-                    <SelectItem value="loading" disabled>Loading venues...</SelectItem>
-                  ) : theaters.length === 0 ? (
-                    <SelectItem value="none" disabled>No venues available</SelectItem>
-                  ) : (
-                    theaters.map((theater) => (
-                      <SelectItem key={theater.id} value={theater.id.toString()}>
-                        {theater.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+          <Card className="w-1/2 p-4">
+          <div className="space-y-2">
+            <Label htmlFor="scenario-name">Scenario Name</Label>
+            <Input
+              id="scenario-name"
+              value={scenarioName}
+              onChange={(e) => setScenarioName(e.target.value)}
+              placeholder="Enter scenario name"
+            />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="scenario-description">Description</Label>
+            <Textarea
+              id="scenario-description"
+              value={scenarioDescription}
+              onChange={(e) => setScenarioDescription(e.target.value)}
+              placeholder="Enter scenario description"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Venue</Label>
+            <Select 
+              value={selectedVenue?.toString()} 
+              onValueChange={(value) => setSelectedVenue(Number(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a venue" />
+              </SelectTrigger>
+              <SelectContent>
+                {isLoading ? (
+                  <SelectItem value="loading" disabled>Loading venues...</SelectItem>
+                ) : theaters.length === 0 ? (
+                  <SelectItem value="none" disabled>No venues available</SelectItem>
+                ) : (
+                  theaters.map((theater) => (
+                    <SelectItem key={theater.id} value={theater.id.toString()}>
+                      {theater.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+          </Card>
           <div className="w-90 h-full">
             {seatPlan && <PriceChart data={seatPlan} pricePoints={pricePoints} />}
           </div>
