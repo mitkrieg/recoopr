@@ -92,6 +92,7 @@ export default function ProductionsPage() {
                     return {
                       ...seat,
                       price: selectedPricePoint.price,
+                      attributes: selectedPricePoint.attributes,
                       status: selectedPricePoint.attributes.houseSeat ? 'house' : 
                              selectedPricePoint.attributes.emergency ? 'emergency' : 
                              selectedPricePoint.attributes.premium ? 'premium' : 

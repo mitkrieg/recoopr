@@ -94,6 +94,7 @@ export default function TheatersPage() {
                 return {
                   ...seat,
                   price: selectedPricePoint.price,
+                  attributes: selectedPricePoint.attributes,
                   status: selectedPricePoint.attributes.houseSeat ? 'house' : 
                          selectedPricePoint.attributes.emergency ? 'emergency' : 
                          selectedPricePoint.attributes.premium ? 'premium' : 

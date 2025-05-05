@@ -58,7 +58,10 @@ export async function createProduction(formData: FormData) {
 
 export async function getTheaters() {
   try {
-    const theaters = await db.query.theaters.findMany();
+    // Get all theaters ordered by name
+    const theaters = (await db.query.theaters.findMany()).sort(
+      (a, b) => a.name.localeCompare(b.name)
+    );
     return { theaters };
   } catch (error) {
     console.error('Error fetching theaters:', error);

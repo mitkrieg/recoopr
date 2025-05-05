@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useState, use } from "react"
+import { useEffect, useState, use, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { SeatMap } from "@/components/seat-map"
 import { PricingPicker, PricePoint } from "@/components/pricing-picker"
-import { SeatPlan } from "@/types/seat-plan"
+import { SeatPlan, Theater, Section, Row, Seat } from "@/types/seat-plan"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,16 +22,7 @@ import {
 } from "@/components/ui/dialog"
 import { SeatMapEditor } from "@/components/seat-map-editor"
 import { getTheaters, getTheaterSeatPlan, getScenario, updateScenario, deleteScenario, getProduction } from "../../actions"
-
-type Theater = {
-  id: number;
-  name: string;
-  url: string | null;
-  venueId: string | null;
-  venueSlug: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+import { Production } from "@/types/production"
 
 type Scenario = {
   id: number;
@@ -45,12 +36,6 @@ type Scenario = {
   pricing: any[];
 };
 
-type Production = {
-  id: number;
-  name: string;
-  startDate: string;
-  endDate: string | null;
-};
 export default function ScenarioPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const resolvedParams = use(params);
@@ -70,6 +55,20 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
   const [isLoading, setIsLoading] = useState(true);
   const [production, setProduction] = useState<Production | null>(null);
 
+  // Create a memoized map of seats for faster access
+  const seatMap = useMemo(() => {
+    if (!seatPlan) return new Map();
+    
+    const map = new Map<string, { section: Section; row: Row; seat: Seat }>();
+    seatPlan.sections.forEach(section => {
+      section.rows.forEach(row => {
+        row.seats.forEach(seat => {
+          map.set(`${section.id}-${row.id}-${seat.id}`, { section, row, seat });
+        });
+      });
+    });
+    return map;
+  }, [seatPlan]);
 
   useEffect(() => {
     async function loadData() {
@@ -84,6 +83,38 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
         if (scenarioError || !scenario) {
           throw new Error(scenarioError || 'Scenario not found');
         }
+        console.log('Loaded scenario:', scenario);
+        console.log('Price points:', scenario.pricing);
+        console.log('Sample seats:', scenario.seatmap.sections[0]?.rows[0]?.seats.slice(0, 3));
+
+        // Process the seatmap to ensure all seats have the correct attributes
+        const processedSeatmap = {
+          ...scenario.seatmap,
+          sections: scenario.seatmap.sections.map((section: Section) => ({
+            ...section,
+            rows: section.rows.map((row: Row) => ({
+              ...row,
+              seats: row.seats.map((seat: Seat) => {
+                // Find the matching price point for this seat
+                const matchingPricePoint = scenario.pricing.find((p: PricePoint) => p.price === seat.price && p.attributes === seat.attributes);
+                if (matchingPricePoint) {
+                  return {
+                    ...seat,
+                    attributes: {
+                      houseSeat: matchingPricePoint.attributes.houseSeat,
+                      emergency: matchingPricePoint.attributes.emergency,
+                      premium: matchingPricePoint.attributes.premium,
+                      accessible: matchingPricePoint.attributes.accessible,
+                      restrictedView: matchingPricePoint.attributes.restrictedView
+                    }
+                  };
+                }
+                return seat;
+              })
+            }))
+          }))
+        };
+
         setScenario(scenario);
         setName(scenario.name);
         setDescription(scenario.description || '');
@@ -91,7 +122,7 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
         if (theater) {
           setSelectedTheater(theater);
         }
-        setSeatPlan(scenario.seatmap);
+        setSeatPlan(processedSeatmap);
         setPricePoints(scenario.pricing);
         const { production, error: productionError } = await getProduction(scenario.productionId);
         if (productionError || !production) {
@@ -110,30 +141,55 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
   }, [id]);
 
   const handleSeatClick = (sectionId: number, rowId: number, seatId: number) => {
-    if (!selectedPricePoint || !seatPlan) return;
+    if (!selectedPricePoint || !seatPlan) {
+      console.log('Missing required data:', { selectedPricePoint, seatPlan });
+      return;
+    }
     
+    console.log('Updating seat with price point:', selectedPricePoint);
+    
+    const seatKey = `${sectionId}-${rowId}-${seatId}`;
+    const seatData = seatMap.get(seatKey);
+    
+    if (!seatData) {
+      console.error('Seat not found in map:', seatKey);
+      return;
+    }
+
+    const { section, row, seat } = seatData;
+    
+    const updatedSeat = {
+      ...seat,
+      price: selectedPricePoint.price,
+      attributes: {
+        houseSeat: selectedPricePoint.attributes.houseSeat,
+        emergency: selectedPricePoint.attributes.emergency,
+        premium: selectedPricePoint.attributes.premium,
+        accessible: selectedPricePoint.attributes.accessible,
+        restrictedView: selectedPricePoint.attributes.restrictedView
+      },
+      status: selectedPricePoint.attributes.houseSeat ? 'house' : 
+             selectedPricePoint.attributes.emergency ? 'emergency' : 
+             selectedPricePoint.attributes.premium ? 'premium' : 
+             selectedPricePoint.attributes.accessible ? 'accessible' : 
+             selectedPricePoint.attributes.restrictedView ? 'restricted' : 'available'
+    };
+
+    console.log('Updated seat:', updatedSeat);
+
     const updatedSeatPlan = {
       ...seatPlan,
-      sections: seatPlan.sections.map((section) => {
-        if (section.id !== sectionId) return section;
+      sections: seatPlan.sections.map(s => {
+        if (s.id !== section.id) return s;
         return {
-          ...section,
-          rows: section.rows.map((row) => {
-            if (row.id !== rowId) return row;
+          ...s,
+          rows: s.rows.map(r => {
+            if (r.id !== row.id) return r;
             return {
-              ...row,
-              seats: row.seats.map((seat) => {
-                if (seat.id !== seatId) return seat;
-                return {
-                  ...seat,
-                  price: selectedPricePoint.price,
-                  status: selectedPricePoint.attributes.houseSeat ? 'house' : 
-                         selectedPricePoint.attributes.emergency ? 'emergency' : 
-                         selectedPricePoint.attributes.premium ? 'premium' : 
-                         selectedPricePoint.attributes.accessible ? 'accessible' : 
-                         selectedPricePoint.attributes.restrictedView ? 'restricted' : 'available'
-                };
-              })
+              ...r,
+              seats: r.seats.map(seat => 
+                seat.id === seatId ? updatedSeat : seat
+              )
             };
           })
         };

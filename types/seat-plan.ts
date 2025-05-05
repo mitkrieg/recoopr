@@ -13,6 +13,13 @@ export type Seat = {
     accessible: boolean | null;
     x: number | null;
     y: number | null;
+    attributes?: {
+        houseSeat: boolean;
+        emergency: boolean;
+        premium: boolean;
+        accessible: boolean;
+        restrictedView: boolean;
+    };
 }
 
 export type Row = {

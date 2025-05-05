@@ -7,7 +7,10 @@ import { Toaster } from '@/components/ui/sonner';
 
 export const metadata: Metadata = {
   title: 'Recoopr: Get to recoopment faster',
-  description: 'A tool for dynamic theater financing'
+  description: 'A tool for dynamic theater financing',
+  icons: {
+    icon: '/favicon.ico',
+  }
 };
 
 export const viewport: Viewport = {

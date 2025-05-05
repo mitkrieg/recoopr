@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SeatAttributesPicker } from '@/components/ui/seat-attributes-picker';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { SeatPlan, Section, Row, Seat } from '@/types/seat-plan';
+import { toast } from 'sonner';
+import { z } from 'zod';
 
 // Predefined set of accessible colors that work well together
 const DEFAULT_COLORS = [
@@ -23,21 +25,24 @@ const DEFAULT_COLORS = [
   '#06b6d4', // Cyan
 ] as const;
 
-type Color = typeof DEFAULT_COLORS[number];
-const DEFAULT_COLOR: Color = DEFAULT_COLORS[0];
+const DEFAULT_COLOR = DEFAULT_COLORS[0];
 
-export type PricePoint = {
-  id: string;
-  price: number;
-  color: Color;
-  attributes: {
-    houseSeat: boolean;
-    emergency: boolean;
-    premium: boolean;
-    accessible: boolean;
-    restrictedView: boolean;
-  };
-};
+const attributesSchema = z.object({
+  houseSeat: z.boolean(),
+  emergency: z.boolean(),
+  premium: z.boolean(),
+  accessible: z.boolean(),
+  restrictedView: z.boolean(),
+});
+
+const pricePointSchema = z.object({
+  id: z.string(),
+  price: z.number(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Color must be a valid hex color'),
+  attributes: attributesSchema,
+});
+
+export type PricePoint = z.infer<typeof pricePointSchema>;
 
 interface PricingPickerProps {
   pricePoints: PricePoint[];
@@ -57,7 +62,7 @@ export function PricingPicker({
   seatPlan
 }: PricingPickerProps) {
   const [newPrice, setNewPrice] = useState('');
-  const [newColor, setNewColor] = useState<Color>(DEFAULT_COLOR);
+  const [newColor, setNewColor] = useState<string>(DEFAULT_COLOR);
   const [newAttributes, setNewAttributes] = useState({
     houseSeat: false,
     emergency: false,
@@ -67,7 +72,7 @@ export function PricingPicker({
   });
   const [editingPoint, setEditingPoint] = useState<PricePoint | null>(null);
   const [editPrice, setEditPrice] = useState('');
-  const [editColor, setEditColor] = useState<Color>(DEFAULT_COLOR);
+  const [editColor, setEditColor] = useState<string>(DEFAULT_COLOR);
   const [editAttributes, setEditAttributes] = useState({
     houseSeat: false,
     emergency: false,
@@ -77,7 +82,7 @@ export function PricingPicker({
   });
 
   // Get the next available color that isn't already in use
-  const getNextAvailableColor = (): Color => {
+  const getNextAvailableColor = (): string => {
     const usedColors = new Set(pricePoints.map(p => p.color));
     return DEFAULT_COLORS.find(color => !usedColors.has(color)) || DEFAULT_COLOR;
   };
@@ -91,6 +96,28 @@ export function PricingPicker({
       color: newColor,
       attributes: newAttributes,
     };
+
+    // Validate the new price point
+    try {
+      pricePointSchema.parse(newPricePoint);
+    } catch (error) {
+      console.error(error);
+      console.log(newPricePoint);
+      toast.error('Invalid price point data');
+      return;
+    }
+
+    // Check for duplicate price/attribute combinations against both current and props pricePoints
+    const allPricePoints = [...pricePoints];
+    const isDuplicate = allPricePoints.some(point => 
+      point.price === newPricePoint.price && 
+      JSON.stringify(point.attributes) === JSON.stringify(newPricePoint.attributes)
+    );
+
+    if (isDuplicate) {
+      toast.error('Price point already exists');
+      return;
+    }
 
     onChange([...pricePoints, newPricePoint]);
     onSelectPricePoint(newPricePoint);
@@ -176,7 +203,7 @@ export function PricingPicker({
             <div className="flex items-center justify-center h-9">
               <SeatAttributesPicker
                 color={newColor}
-                onColorChange={(color: string) => setNewColor(color as Color)}
+                onColorChange={(color: string) => setNewColor(color as string)}
                 attributes={newAttributes}
                 onAttributesChange={setNewAttributes}
               />
@@ -219,7 +246,7 @@ export function PricingPicker({
                           />
                           <SeatAttributesPicker
                             color={editColor}
-                            onColorChange={(color: string) => setEditColor(color as Color)}
+                            onColorChange={(color: string) => setEditColor(color as string)}
                             attributes={editAttributes}
                             onAttributesChange={setEditAttributes}
                           />

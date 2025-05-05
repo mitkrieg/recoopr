@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Squircle } from "lucide-react";
 import { normalizeSeatPositions } from "@/utils/seat-position-normalizer";
 import { Theater, SeatPlan } from "@/types/seat-plan";
@@ -23,6 +23,27 @@ export function SeatMap({
     const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
     const [hoveredSeat, setHoveredSeat] = useState<{sectionId: number, rowId: number, seatId: number} | null>(null);
 
+    // Create a map of seat positions for O(1) access
+    const seatPositionMap = useMemo(() => {
+        if (!seatPlan) return new Map<string, { sectionId: number, rowId: number, seatId: number }>();
+        
+        const map = new Map<string, { sectionId: number, rowId: number, seatId: number }>();
+        seatPlan.sections.forEach(section => {
+            section.rows.forEach(row => {
+                row.seats.forEach(seat => {
+                    if (seat.x !== undefined && seat.y !== undefined) {
+                        map.set(`${seat.x},${seat.y}`, {
+                            sectionId: section.id,
+                            rowId: row.id,
+                            seatId: seat.id
+                        });
+                    }
+                });
+            });
+        });
+        return map;
+    }, [seatPlan]);
+
     useEffect(() => {
         if (initialSeatPlan) {
             setSeatPlan(initialSeatPlan);
@@ -43,7 +64,7 @@ export function SeatMap({
 
     const handleMouseEnter = (sectionId: number, rowId: number, seatId: number) => {
         if (isDragging && selectedPricePoint && lastSeat) {
-            // Get all seats between lastSeat and current seat
+            // Get the current and last seat positions
             const currentSection = seatPlan?.sections.find(s => s.id === sectionId);
             const lastSection = seatPlan?.sections.find(s => s.id === lastSeat.sectionId);
             
@@ -65,16 +86,16 @@ export function SeatMap({
             const startY = Math.min(currentSeat.y, lastSeatObj.y);
             const endY = Math.max(currentSeat.y, lastSeatObj.y);
             
-            // Update all seats in the range
-            seatPlan?.sections.forEach(section => {
-                section.rows.forEach(row => {
-                    row.seats.forEach(seat => {
-                        if (seat.x && seat.y && seat.x >= startX && seat.x <= endX && seat.y >= startY && seat.y <= endY) {
-                            onSeatClick(section.id, row.id, seat.id);
-                        }
-                    });
-                });
-            });
+            // Update all seats in the range using the position map
+            for (let x = startX; x <= endX; x++) {
+                for (let y = startY; y <= endY; y++) {
+                    const seatKey = `${x},${y}`;
+                    const seatInfo = seatPositionMap.get(seatKey);
+                    if (seatInfo) {
+                        onSeatClick(seatInfo.sectionId, seatInfo.rowId, seatInfo.seatId);
+                    }
+                }
+            }
             
             setLastSeat({ sectionId, rowId, seatId });
         }
@@ -146,7 +167,14 @@ export function SeatMap({
                                         {section.rows.map(row => (
                                             <div key={row.id} className="seat-row">
                                                 {row.seats.map(seat => {
-                                                    const pricePoint = pricePoints.find(p => p.price === seat.price);
+                                                    const pricePoint = pricePoints.find(p => 
+                                                        p.price === seat.price && 
+                                                        p.attributes.houseSeat === seat.attributes?.houseSeat &&
+                                                        p.attributes.emergency === seat.attributes?.emergency &&
+                                                        p.attributes.premium === seat.attributes?.premium &&
+                                                        p.attributes.accessible === seat.attributes?.accessible &&
+                                                        p.attributes.restrictedView === seat.attributes?.restrictedView
+                                                    );
                                                     return (
                                                         <div
                                                             key={seat.id}
