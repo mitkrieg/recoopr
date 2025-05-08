@@ -46,7 +46,10 @@ export function SeatMap({
 
     useEffect(() => {
         if (initialSeatPlan) {
-            setSeatPlan(initialSeatPlan);
+            console.log('Normalizing seat positions...');
+            const normalizedSeatPlan = normalizeSeatPositions(initialSeatPlan);
+            console.log('Seat positions normalized:', normalizedSeatPlan);
+            setSeatPlan(normalizedSeatPlan);
         }
     }, [initialSeatPlan]);
 
