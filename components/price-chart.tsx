@@ -148,7 +148,7 @@ export function PriceChart({ data, pricePoints }: PriceChartProps) {
                 if (!active || !payload?.length) return null;
                 const data = payload[0].payload;
                 return (
-                  <div className="bg-background p-2 border rounded-lg">
+                  <div className="bg-white shadow-md p-2 border rounded-lg">
                     <p className="font-medium">${data.price} per seat</p>
                     <p className="text-sm text-muted-foreground">{data.count} seats</p>
                     <p className="font-medium">{formatCurrency(data.totalValue)} total</p>
