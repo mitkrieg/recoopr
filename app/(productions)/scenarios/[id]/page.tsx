@@ -54,6 +54,7 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [production, setProduction] = useState<Production | null>(null);
+  const [pendingTheaterId, setPendingTheaterId] = useState<number | null>(null);
 
   // Create a memoized map of seats for faster access
   const seatMap = useMemo(() => {
@@ -232,23 +233,33 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
   const handleVenueChange = async (value: string) => {
     const theaterId = Number(value);
     if (theaterId !== selectedTheater?.id) {
-      try {
-        const { seatPlan: newSeatPlan, error } = await getTheaterSeatPlan(theaterId);
-        if (error || !newSeatPlan) {
-          throw new Error(error || 'Failed to load seat plan');
-        }
+      setPendingTheaterId(theaterId);
+      setShowVenueChangeDialog(true);
+    }
+  };
 
-        const theater = theaters.find(t => t.id === theaterId);
-        if (theater) {
-          setSelectedTheater(theater);
-          setSeatPlan(newSeatPlan);
-          setPricePoints([]);
-          setSelectedPricePoint(null);
-        }
-      } catch (error) {
-        console.error('Error changing venue:', error);
-        toast.error('Failed to load seat plan');
+  const handleConfirmVenueChange = async () => {
+    if (!pendingTheaterId) return;
+    
+    try {
+      const { seatPlan: newSeatPlan, error } = await getTheaterSeatPlan(pendingTheaterId);
+      if (error || !newSeatPlan) {
+        throw new Error(error || 'Failed to load seat plan');
       }
+
+      const theater = theaters.find(t => t.id === pendingTheaterId);
+      if (theater) {
+        setSelectedTheater(theater);
+        setSeatPlan(newSeatPlan);
+        setPricePoints([]);
+        setSelectedPricePoint(null);
+      }
+    } catch (error) {
+      console.error('Error changing venue:', error);
+      toast.error('Failed to load seat plan');
+    } finally {
+      setShowVenueChangeDialog(false);
+      setPendingTheaterId(null);
     }
   };
 
@@ -367,10 +378,13 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowVenueChangeDialog(false)}>
+            <Button variant="outline" onClick={() => {
+              setShowVenueChangeDialog(false);
+              setPendingTheaterId(null);
+            }}>
               Cancel
             </Button>
-            <Button onClick={() => setShowVenueChangeDialog(false)}>
+            <Button onClick={handleConfirmVenueChange}>
               Confirm Change
             </Button>
           </DialogFooter>
