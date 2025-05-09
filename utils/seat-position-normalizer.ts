@@ -53,7 +53,7 @@ export function normalizeSeatPositions(seatPlan: SeatPlan): SeatPlan {
                     seats: row.seats.map(seat => ({
                         ...seat,
                         x: seat.x !== null ? seat.x - shiftAmountX + 10 - additionalShiftX : null,
-                        y: seat.y !== null ? seat.y - shiftAmountY + 15 : null
+                        y: seat.y !== null ? seat.y - shiftAmountY + 60 : null
                     }))
                 }))
             };

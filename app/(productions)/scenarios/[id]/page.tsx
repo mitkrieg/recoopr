@@ -125,6 +125,10 @@ export default function ScenarioPage({ params }: { params: Promise<{ id: string 
         }
         setSeatPlan(processedSeatmap);
         setPricePoints(scenario.pricing);
+        // Set the first price point as selected by default if there are any price points
+        if (scenario.pricing.length > 0) {
+          setSelectedPricePoint(scenario.pricing[0]);
+        }
         const { production, error: productionError } = await getProduction(scenario.productionId);
         if (productionError || !production) {
           throw new Error(productionError || 'Production not found');
